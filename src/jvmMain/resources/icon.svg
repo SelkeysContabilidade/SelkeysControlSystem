@@ -1,0 +1,14 @@
+<svg id="eOBvm6jlLZu1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 19 19" shape-rendering="geometricPrecision" text-rendering="geometricPrecision">
+<style><![CDATA[
+#eOBvm6jlLZu7_tr {animation: eOBvm6jlLZu7_tr__tr 5000ms linear infinite normal forwards}@keyframes eOBvm6jlLZu7_tr__tr { 0% {transform: translate(105.000046px,148.5px) rotate(0deg)} 100% {transform: translate(105.000046px,148.5px) }}
+]]></style>
+    <g transform="translate(-95.500114-138.999786)">
+        <rect width="18" height="19" rx="0" ry="0" transform="translate(96 139)" fill="#fff" stroke-width="0"/>
+            <path d="M95.500114,138.99978v19.00039h18.999876v-19.00039Zm9.499676.26252l8.00003,4.61884v9.23768l-8.00003,4.61884-8.000026-4.61884v-9.23768Z" fill="#4464ab" stroke-width="0"/>
+        <circle r="1" transform="translate(105 148.5)" fill="none" stroke="#4464ab"/>
+        <circle r="3" transform="translate(105 148.5)" fill="none" stroke="#4464ab"/>
+        <g id="eOBvm6jlLZu7_tr" transform="translate(105.000046,148.5) rotate(0)">
+            <path d="M104.49956,143c-2.830926.259788-4.998348,2.644099-4.99969,5.5.001342,2.855901,2.168764,5.240212,4.99969,5.5v-1.01081c-2.276111-.255786-3.997892-2.188258-3.99975-4.48919.001858-2.300932,1.723639-4.233404,3.99975-4.48919Zm1.00046,0v1.01081c2.276115.255782,3.997902,2.188255,3.99976,4.48919-.001858,2.300935-1.723645,4.233408-3.99976,4.48919v1.01081c2.831132-.259535,4.998843-2.643917,5.00021-5.5-.001367-2.856083-2.169078-5.240465-5.00021-5.5Z" transform="translate(-105.000046,-148.5)" fill="#4464ab" stroke-width="1.00232"/>
+        </g>
+    </g>
+</svg>
