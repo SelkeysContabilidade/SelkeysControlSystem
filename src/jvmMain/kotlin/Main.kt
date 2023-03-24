@@ -31,7 +31,10 @@ fun App() {
 }
 
 fun main() = application {
-    Window(onCloseRequest = ::exitApplication) {
+    Window(
+        onCloseRequest = ::exitApplication,
+        title = "Selkeys Control System",
+        icon = appIcon) {
         App()
     }
 }
