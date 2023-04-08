@@ -1,13 +1,13 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-
 plugins {
-    kotlin("multiplatform")
-    id("org.jetbrains.compose")
+    kotlin("jvm") version "1.8.10"
+    id("org.jetbrains.compose") version "1.3.1"
     id("dev.hydraulic.conveyor") version "1.4"
 }
 
 group = "br.com.selkeys"
-version = "1.0.0"
+version = "1.0.15"
+java.toolchain.languageVersion.set(JavaLanguageVersion.of(19))
+compose.desktop.application.mainClass = "MainKt"
 
 repositories {
     google()
@@ -16,57 +16,25 @@ repositories {
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
 }
 
-kotlin {
-    jvm {
-        jvmToolchain(19)
-        withJava()
-    }
-    sourceSets {
-        val jvmMain by getting {
-            dependencies {
-                implementation(compose.desktop.currentOs)
-            }
-        }
-        val jvmTest by getting
-    }
-}
-
-var outputDir = "packages"
-
-tasks.register<Exec>("convey") {
-    outputs.upToDateWhen { false }
-    val dir = layout.buildDirectory.dir(outputDir)
-    outputs.dir(dir)
-    commandLine("conveyor","--passphrase", "env:passphrase", "make", "--output-dir", dir.get(), "site")
-    dependsOn("jar", "writeConveyorConfig")
-}
-
-tasks.register<Copy>("deployWebsite") {
-    from(layout.buildDirectory.file("$outputDir/download.html"))
-    into("download-page")
-    rename(".*", "index.html")
-    dependsOn("convey")
-}
-
 dependencies {
-    linuxAmd64(compose.desktop.linux_x64)
-    macAmd64(compose.desktop.macos_x64)
-    macAarch64(compose.desktop.macos_arm64)
     windowsAmd64(compose.desktop.windows_x64)
+
+    implementation("com.azure:azure-cosmos:4.42.0")
+    implementation("com.azure:azure-identity:1.8.1")
+
+    implementation("org.jetbrains.exposed:exposed-core:0.40.1")
+    implementation("org.jetbrains.exposed:exposed-dao:0.40.1")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.40.1")
+
+    implementation("com.h2database:h2:2.1.214")
 }
 
-compose.desktop {
-    application {
-        mainClass = "MainKt"
-        nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "selkeys-control-system"
-            packageVersion = "$version"
-        }
-    }
+tasks.processResources {
+    inputs.properties(System.getenv())
+    inputs.properties(Pair("version", version))
+    expand(inputs.properties)
 }
 
-// region Work around temporary Compose bugs.
 configurations.all {
     attributes {
         // https://github.com/JetBrains/compose-jb/issues/1404#issuecomment-1146894731
@@ -74,13 +42,6 @@ configurations.all {
     }
 }
 
-// Force override the Kotlin stdlib version used by Compose to 1.7, as otherwise we can end up with a mix of 1.6 and 1.7 on our classpath.
-dependencies {
-    val v = "1.7.10"
-    for (m in setOf("linuxAmd64", "macAmd64", "macAarch64", "windowsAmd64")) {
-        m("org.jetbrains.kotlin:kotlin-stdlib:$v")
-        m("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$v")
-        m("org.jetbrains.kotlin:kotlin-stdlib-jdk7:$v")
-    }
-}
-// endregion
+
+
+
