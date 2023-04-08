@@ -18,6 +18,7 @@ repositories {
 
 dependencies {
     windowsAmd64(compose.desktop.windows_x64)
+    linuxAmd64(compose.desktop.linux_x64)
 
     implementation("com.azure:azure-cosmos:4.42.0")
     implementation("com.azure:azure-identity:1.8.1")
