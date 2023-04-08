@@ -29,13 +29,14 @@ object DatabaseConnector {
     private var documentsContainer: CosmosContainer
 
     init {
-        val database = CosmosClientBuilder()
+        CosmosClientBuilder()
             .endpoint(props.getProperty("endpoint"))
             .credential(InteractiveBrowserCredentialBuilder().build())
             .buildClient()
-            .getDatabase("ControlSystemData")
-        clientContainer = database.getContainer("Clients")
-        documentsContainer = database.getContainer("Documents")
+            .getDatabase("ControlSystemData").let {
+                clientContainer = it.getContainer("Clients")
+                documentsContainer = it.getContainer("Documents")
+            }
     }
 
     fun queryClients(): CosmosPagedIterable<Client> {

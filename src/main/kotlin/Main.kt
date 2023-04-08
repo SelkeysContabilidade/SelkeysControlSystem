@@ -33,7 +33,7 @@ fun app() {
     ) {
         MaterialTheme {
             Button(onClick = {
-                text = "Working at $monitoredFolder"
+                text = "Working at $monitoredFolder\njava version: $version"
             }) {
                 Text(text)
             }
