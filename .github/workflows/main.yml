@@ -18,12 +18,13 @@ jobs:
         uses: gradle/gradle-build-action@v2
 
       - name: Execute Gradle build
+        env:
+          ENDPOINT: ${{ vars.ENDPOINT }}
         run: ./gradlew build
 
       - name: Run Conveyor
         env:
           PAGES_KEY: ${{ secrets.PAGES_KEY }}
-          ENDPOINT: ${{ vars.ENDPOINT }}
         uses: hydraulic-software/conveyor/actions/build@v1
         with:
           command: make copied-site
