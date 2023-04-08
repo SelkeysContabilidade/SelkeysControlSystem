@@ -14,8 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.loadImageBitmap
-import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import database.LocalDatabase.findAll
+import database.LocalDatabase.updateDatabase
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
@@ -42,13 +43,21 @@ fun app() {
 }
 
 fun main() = application {
-    Window(
-        onCloseRequest = ::exitApplication,
-        title = "Selkeys Control System",
-        icon = appIcon
-    ) {
-        app()
+    try {
+        updateDatabase()
+    } catch (exception: Exception) {
+        println("Unable to update due to $exception")
     }
+    findAll()
+    /*
+        Window(
+            onCloseRequest = ::exitApplication,
+            title = "Selkeys Control System",
+            icon = appIcon
+        ) {
+            app()
+        }
+         */
 }
 
 //as suggest on conveyor website https://conveyor.hydraulic.dev/7.2/tutorial/tortoise/2-gradle/#setting-icons
