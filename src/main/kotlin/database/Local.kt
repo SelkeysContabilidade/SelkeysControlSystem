@@ -1,5 +1,6 @@
 package database
 
+import Preferences.props
 import database.RemoteConnector.queryRemoteClients
 import database.RemoteConnector.queryRemoteDocuments
 import org.jetbrains.exposed.dao.IntEntity
@@ -12,11 +13,12 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 
 object LocalDatabase {
-    private val db = Database.connect("jdbc:h2:~/.selkeys/clients;MODE=MYSQL", driver = "org.h2.Driver", "Selkeys", "")
+    private val db = Database.connect(props.getProperty("localDatabase"), driver = "org.h2.Driver", "Selkeys", "")
 
     fun updateDatabase() {
         transaction(db) {
             SchemaUtils.create(Clients)
+            commit()
             Clients.deleteAll()
             queryRemoteClients().forEach {
                 Client.new {
@@ -27,6 +29,7 @@ object LocalDatabase {
             }
             commit()
             SchemaUtils.create(Documents)
+            commit()
             Documents.deleteAll()
             queryRemoteDocuments().forEach {
                 Document.new {

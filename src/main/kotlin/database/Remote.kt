@@ -24,7 +24,7 @@ object RemoteConnector {
     private var documentsContainer: CosmosContainer? = null
 
     private fun init() = CosmosClientBuilder()
-        .endpoint(props.getProperty("endpoint"))
+        .endpoint(props.getProperty("remoteDatabase"))
         .credential(InteractiveBrowserCredentialBuilder().build())
         .buildClient()
         .getDatabase("ControlSystemData").let {
