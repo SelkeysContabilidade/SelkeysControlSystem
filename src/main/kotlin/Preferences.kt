@@ -20,7 +20,7 @@ object Preferences {
             .use(props::load)
     }
 
-    fun selectNewFolder() {
+    fun selectMonitoredFolder() {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
         JFileChooser("/").apply {
             fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
