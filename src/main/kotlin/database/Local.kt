@@ -16,24 +16,23 @@ object LocalDatabase {
     private val db = Database.connect(props.getProperty("localDatabase"), driver = "org.h2.Driver", "Selkeys", "")
 
     fun updateDatabase() {
-        val sourcedClients = queryRemoteClients()
-        val sourcedDocuments = queryRemoteDocuments()
         //fetch remote clients before doing anything
-        if (sourcedClients == null || sourcedDocuments == null) {
+        val sourceClients = queryRemoteClients()
+        val sourceDocuments = queryRemoteDocuments()
+        if (sourceClients == null || sourceDocuments == null) {
             return
         }
         //clear all local databases
         transaction(db) {
+            Procedures.dropStatement().forEach(::exec)
+            Documents.dropStatement().forEach(::exec)
+            Clients.dropStatement().forEach(::exec)
             SchemaUtils.create(Documents)
             SchemaUtils.create(Clients)
             SchemaUtils.create(Procedures)
-            commit()
-            Procedures.deleteAll()
-            Documents.deleteAll()
-            Clients.deleteAll()
         }
         //adding source data to the local
-        sourcedClients.forEach {
+        sourceClients.forEach {
             transaction {
                 Client.new {
                     registry = it.registry
@@ -42,7 +41,7 @@ object LocalDatabase {
                 }
             }
         }
-        sourcedDocuments.forEach {
+        sourceDocuments.forEach {
             val document = transaction {
                 Document.new {
                     identifier = it.identifier
