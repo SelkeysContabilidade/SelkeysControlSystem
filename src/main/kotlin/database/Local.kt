@@ -16,26 +16,47 @@ object LocalDatabase {
     private val db = Database.connect(props.getProperty("localDatabase"), driver = "org.h2.Driver", "Selkeys", "")
 
     fun updateDatabase() {
+        val sourcedClients = queryRemoteClients()
+        val sourcedDocuments = queryRemoteDocuments()
+        //fetch remote clients before doing anything
+        if (sourcedClients == null || sourcedDocuments == null) {
+            return
+        }
+        //clear all local databases
         transaction(db) {
+            SchemaUtils.create(Documents)
             SchemaUtils.create(Clients)
+            SchemaUtils.create(Procedures)
             commit()
+            Procedures.deleteAll()
+            Documents.deleteAll()
             Clients.deleteAll()
-            queryRemoteClients().forEach {
+        }
+        //adding source data to the local
+        sourcedClients.forEach {
+            transaction {
                 Client.new {
                     registry = it.registry
                     baseFolderStructure = it.baseFolderStructure
                     nickname = it.nickname
                 }
             }
-            commit()
-            SchemaUtils.create(Documents)
-            commit()
-            Documents.deleteAll()
-            queryRemoteDocuments().forEach {
+        }
+        sourcedDocuments.forEach {
+            val document = transaction {
                 Document.new {
-                    type = it.type
-                    regexMatch = it.regexMatch
+                    identifier = it.identifier
                     baseFolderStructure = it.baseFolderStructure
+                }
+            }
+            it.procedures.map {
+                transaction {
+                    Procedure.new {
+                        type = it.type
+                        content = it.content
+                        order = it.order
+                        this.document = document
+                    }
                 }
             }
         }
@@ -45,27 +66,46 @@ object LocalDatabase {
         return transaction(db) { Clients.registry eq registry }
     }
 
-    fun findAll(): List<ResultRow> {
+    fun findAllClients(): List<Client> {
         return transaction(db) {
-            Clients.selectAll().forEach(::println)
-            Clients.selectAll().toList()
+            Clients.selectAll().map { transaction { Client.wrapRow(it) } }.toList()
+        }
+    }
+
+    fun findAllDocuments(): List<Document> {
+        return transaction(db) {
+            Documents.selectAll().map { transaction { Document.wrapRow(it) } }.toList()
         }
     }
 }
 
 object Documents : IntIdTable() {
-    val type = text("type")
+    val identifier = text("identifier")
     val baseFolderStructure = text("baseFolderStructure", eagerLoading = true)
-    val regexMatch = text("regexMatch")
+}
 
+class Procedure(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<Procedure>(Procedures)
+
+    var type by Procedures.type
+    var content by Procedures.content
+    var order by Procedures.order
+    var document by Document referencedOn Procedures.document
+}
+
+object Procedures : IntIdTable() {
+    val type = text("type")
+    val content = text("content")
+    val order = integer("order")
+    val document = reference("document", Documents)
 }
 
 class Document(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<Document>(Documents)
 
-    var type by Documents.type
+    var identifier by Documents.identifier
     var baseFolderStructure by Documents.baseFolderStructure
-    var regexMatch by Documents.regexMatch
+    val procedures by Procedure referrersOn Procedures.document
 }
 
 class Client(id: EntityID<Int>) : IntEntity(id) {

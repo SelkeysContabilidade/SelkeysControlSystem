@@ -15,9 +15,15 @@ object RemoteConnector {
     }
 
     class Document {
-        lateinit var type: String
+        lateinit var identifier: String
         lateinit var baseFolderStructure: String
-        lateinit var regexMatch: String
+        lateinit var procedures: List<Procedure>
+    }
+
+    class Procedure {
+        var order = 0
+        lateinit var type: String
+        lateinit var content: String
     }
 
     private var clientContainer: CosmosContainer? = null
@@ -33,13 +39,13 @@ object RemoteConnector {
         }
 
 
-    fun queryRemoteClients(): CosmosPagedIterable<Client> {
+    fun queryRemoteClients(): CosmosPagedIterable<Client>? {
         if (clientContainer == null) init()
-        return clientContainer!!.queryItems("select * from c", CosmosQueryRequestOptions(), Client::class.java)
+        return clientContainer?.queryItems("select * from c", CosmosQueryRequestOptions(), Client::class.java)
     }
 
-    fun queryRemoteDocuments(): CosmosPagedIterable<Document> {
+    fun queryRemoteDocuments(): CosmosPagedIterable<Document>? {
         if (documentsContainer == null) init()
-        return documentsContainer!!.queryItems("select * from c", CosmosQueryRequestOptions(), Document::class.java)
+        return documentsContainer?.queryItems("select * from c", CosmosQueryRequestOptions(), Document::class.java)
     }
 }
