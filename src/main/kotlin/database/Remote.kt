@@ -18,6 +18,7 @@ object RemoteConnector {
         lateinit var identifier: String
         lateinit var baseFolderStructure: String
         lateinit var procedures: List<Procedure>
+        lateinit var registryRegex: String
     }
 
     class Procedure {
@@ -26,8 +27,14 @@ object RemoteConnector {
         lateinit var content: String
     }
 
+    class Translation {
+        lateinit var key: String
+        lateinit var translation: String
+    }
+
     private var clientContainer: CosmosContainer? = null
     private var documentsContainer: CosmosContainer? = null
+    private var translationContainer: CosmosContainer? = null
 
     private fun init() = CosmosClientBuilder()
         .endpoint(props.getProperty("remoteDatabase"))
@@ -36,16 +43,22 @@ object RemoteConnector {
         .getDatabase("ControlSystemData").let {
             clientContainer = it.getContainer("Clients")
             documentsContainer = it.getContainer("Documents")
+            translationContainer = it.getContainer("Translations")
         }
 
 
     fun queryRemoteClients(): CosmosPagedIterable<Client>? {
-        if (clientContainer == null) init()
+        clientContainer ?: init()
         return clientContainer?.queryItems("select * from c", CosmosQueryRequestOptions(), Client::class.java)
     }
 
     fun queryRemoteDocuments(): CosmosPagedIterable<Document>? {
-        if (documentsContainer == null) init()
+        documentsContainer ?: init()
         return documentsContainer?.queryItems("select * from c", CosmosQueryRequestOptions(), Document::class.java)
+    }
+
+    fun queryRemoteTranslations(): CosmosPagedIterable<Translation>? {
+        translationContainer ?: init()
+        return translationContainer?.queryItems("select * from c", CosmosQueryRequestOptions(), Translation::class.java)
     }
 }
