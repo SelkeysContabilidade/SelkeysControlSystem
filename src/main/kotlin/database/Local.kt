@@ -90,12 +90,6 @@ object LocalDatabase {
         Documents.selectAll().map { transaction { Document.wrapRow(it) } }.toList()
     }
 
-
-    private object Translations : IntIdTable() {
-        val key = text("key")
-        val translation = text("translation")
-    }
-
     class Translation(id: EntityID<Int>) : IntEntity(id) {
         companion object : IntEntityClass<Translation>(Translations)
 
@@ -103,10 +97,9 @@ object LocalDatabase {
         var translation by Translations.translation
     }
 
-    private object Documents : IntIdTable() {
-        val identifier = text("identifier")
-        val baseFolderStructure = text("baseFolderStructure", eagerLoading = true)
-        val registryRegex = text("registryIndex")
+    private object Translations : IntIdTable() {
+        val key = text("key")
+        val translation = text("translation")
     }
 
     class Procedure(id: EntityID<Int>) : IntEntity(id) {
@@ -133,6 +126,12 @@ object LocalDatabase {
         var registryRegex by Documents.registryRegex
         private val procedures by Procedure referrersOn Procedures.document
         fun getProceduresOrdered() = transaction { procedures.sortedBy { it.order } }
+    }
+
+    private object Documents : IntIdTable() {
+        val identifier = text("identifier")
+        val baseFolderStructure = text("baseFolderStructure", eagerLoading = true)
+        val registryRegex = text("registryIndex")
     }
 
     class Client(id: EntityID<Int>) : IntEntity(id) {
