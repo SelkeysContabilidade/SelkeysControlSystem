@@ -28,6 +28,9 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:0.40.1")
 
     implementation("com.h2database:h2:2.1.214")
+
+    implementation("org.apache.pdfbox:pdfbox:2.0.27")
+
 }
 
 tasks.processResources {

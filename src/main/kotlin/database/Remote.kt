@@ -15,13 +15,26 @@ object RemoteConnector {
     }
 
     class Document {
-        lateinit var type: String
+        lateinit var identifier: String
         lateinit var baseFolderStructure: String
-        lateinit var regexMatch: String
+        lateinit var procedures: List<Procedure>
+        lateinit var registryRegex: String
+    }
+
+    class Procedure {
+        var order = 0
+        lateinit var type: String
+        lateinit var content: String
+    }
+
+    class Translation {
+        lateinit var key: String
+        lateinit var translation: String
     }
 
     private var clientContainer: CosmosContainer? = null
     private var documentsContainer: CosmosContainer? = null
+    private var translationContainer: CosmosContainer? = null
 
     private fun init() = CosmosClientBuilder()
         .endpoint(props.getProperty("remoteDatabase"))
@@ -30,16 +43,22 @@ object RemoteConnector {
         .getDatabase("ControlSystemData").let {
             clientContainer = it.getContainer("Clients")
             documentsContainer = it.getContainer("Documents")
+            translationContainer = it.getContainer("Translations")
         }
 
 
-    fun queryRemoteClients(): CosmosPagedIterable<Client> {
-        if (clientContainer == null) init()
-        return clientContainer!!.queryItems("select * from c", CosmosQueryRequestOptions(), Client::class.java)
+    fun queryRemoteClients(): CosmosPagedIterable<Client>? {
+        clientContainer ?: init()
+        return clientContainer?.queryItems("select * from c", CosmosQueryRequestOptions(), Client::class.java)
     }
 
-    fun queryRemoteDocuments(): CosmosPagedIterable<Document> {
-        if (documentsContainer == null) init()
-        return documentsContainer!!.queryItems("select * from c", CosmosQueryRequestOptions(), Document::class.java)
+    fun queryRemoteDocuments(): CosmosPagedIterable<Document>? {
+        documentsContainer ?: init()
+        return documentsContainer?.queryItems("select * from c", CosmosQueryRequestOptions(), Document::class.java)
+    }
+
+    fun queryRemoteTranslations(): CosmosPagedIterable<Translation>? {
+        translationContainer ?: init()
+        return translationContainer?.queryItems("select * from c", CosmosQueryRequestOptions(), Translation::class.java)
     }
 }
