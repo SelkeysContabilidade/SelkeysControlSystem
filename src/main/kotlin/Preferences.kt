@@ -5,7 +5,9 @@ import javax.swing.UIManager
 
 object Preferences {
     var monitoredFolder: String
-    private var moveUnknownFiles: Boolean
+    var firstExecution: Boolean
+    var moveUnknownFiles: Boolean
+
     private val prefs: Preferences = Preferences.userNodeForPackage(Preferences::class.java)
     val props = Properties()
 
@@ -13,6 +15,7 @@ object Preferences {
     init {
         monitoredFolder = prefs.get("monitoredFolder", System.getProperty("user.dir"))
         moveUnknownFiles = prefs.get("moveUnkownFiles", "false").toBoolean()
+        firstExecution = prefs.get("firstExecution", "true").toBoolean()
         Thread
             .currentThread()
             .contextClassLoader
@@ -20,7 +23,7 @@ object Preferences {
             .use(props::load)
     }
 
-    fun selectNewFolder() {
+    fun selectMonitoredFolder() {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
         JFileChooser("/").apply {
             fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
@@ -32,6 +35,13 @@ object Preferences {
             monitoredFolder = it.selectedFile.toString()
         }
         prefs.put("monitoredFolder", monitoredFolder)
+    }
+
+    fun toggleMoveUnkownFiles(): Boolean {
+//        println(moveUnknownFiles)
+        moveUnknownFiles = !moveUnknownFiles
+        prefs.put("moveUnkownFiles", moveUnknownFiles.toString())
+        return moveUnknownFiles
     }
 
 }

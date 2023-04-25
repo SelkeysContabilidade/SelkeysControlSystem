@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "br.com.selkeys"
-version = "1.0.16"
+version = "1.1.0"
 java.toolchain.languageVersion.set(JavaLanguageVersion.of(19))
 compose.desktop.application.mainClass = "MainKt"
 
@@ -28,6 +28,9 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:0.40.1")
 
     implementation("com.h2database:h2:2.1.214")
+
+    implementation("org.apache.pdfbox:pdfbox:2.0.27")
+
 }
 
 tasks.processResources {
