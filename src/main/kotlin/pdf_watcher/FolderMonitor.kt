@@ -8,16 +8,16 @@ import java.nio.file.WatchService
 import kotlin.io.path.Path
 
 class FolderMonitor(watchPath: String) {
-    private val watcher: WatchService = FileSystems.getDefault().newWatchService()
+    private val watchService: WatchService = FileSystems.getDefault().newWatchService()
     private val watchKey: WatchKey
 
     init {
-        watchKey = Path(watchPath).register(watcher, StandardWatchEventKinds.ENTRY_CREATE)
+        watchKey = Path(watchPath).register(watchService, StandardWatchEventKinds.ENTRY_CREATE)
     }
 
     fun close() = watchKey.cancel()
     fun getChangedFiles(): List<String> =
-        watcher.take().let { watchEvent ->
+        watchService.take().let { watchEvent ->
             watchEvent.reset()
             return watchEvent.pollEvents().map { "$monitoredFolder/${it.context()}" }
         }
