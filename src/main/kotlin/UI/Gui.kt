@@ -168,7 +168,11 @@ object Gui {
             }
             Spacer(Modifier.width(5.dp))
             Column {
-                Button(onClick = { updateDatabase() }) {
+                Button(onClick = {
+                    coroutineScope.launch(Dispatchers.Default) {
+                        updateDatabase()
+                    }
+                }) {
                     Text("Atualizar banco de dados")
                 }
                 Button(onClick = { currentPage.value = CurrentScreen.ABOUT }) {

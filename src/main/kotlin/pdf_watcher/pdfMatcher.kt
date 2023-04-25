@@ -51,7 +51,13 @@ fun processFiles(files: List<String>) {
     val renamedPdf = matchPdf(files)
     renamedPdf
         .filter { it.second != null }
-        .forEach { File(it.first).copyTo(File(it.second!!)) }
+        .forEach {
+            try {
+                File(it.first).copyTo(File(it.second!!))
+            } catch (_: Exception) {
+
+            }
+        }
     val nameZip = matchZip()
     val nameXml = matchXml()
 }
