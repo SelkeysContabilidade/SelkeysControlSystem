@@ -23,19 +23,22 @@ object Preferences {
             .use(props::load)
     }
 
-    fun selectMonitoredFolder() {
+    fun selectMonitoredFolder(title: String = "Selecione uma pasta"): String {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
         JFileChooser("/").apply {
             fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-            dialogTitle = "Selecione uma pasta"
+            dialogTitle = title
             approveButtonText = "Selecionar"
             approveButtonToolTipText = "Seleciona o diretorio descrito a ser monitorado"
         }.let {
             it.showOpenDialog(null)
-            monitoredFolder = it.selectedFile.toString()
+            monitoredFolder = it.selectedFile?.toString() ?: selectMonitoredFolder("Diretório invalido")
         }
         prefs.put("monitoredFolder", monitoredFolder)
+        return monitoredFolder
     }
+
+    fun disableFirstExecutionWarning() = prefs.put("firstExecution", "false")
 
     fun toggleMoveUnkownFiles(): Boolean {
 //        println(moveUnknownFiles)

@@ -1,7 +1,8 @@
 package UI
 
 import Preferences
-import Preferences.monitoredFolder
+import Preferences.disableFirstExecutionWarning
+import Preferences.firstExecution
 import Preferences.props
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -73,30 +74,30 @@ object Gui {
     private lateinit var coroutineScope: CoroutineScope
     private lateinit var scaffoldState: ScaffoldState
     private lateinit var windowState: WindowState
-    private lateinit var currentPage: MutableState<CurrentScreen>
+    private lateinit var currentScreen: MutableState<CurrentScreen>
     private lateinit var drawerSize: MutableState<DpSize>
     private lateinit var drawerState: DrawerState
     private lateinit var drawerOffset: MutableState<Float>
-    private lateinit var size: MutableState<DpSize>
+    private lateinit var contentSize: MutableState<DpSize>
+    private lateinit var monitoredFolder: MutableState<String>
 
 
     @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
     @Composable
     @Preview
     fun FrameWindowScope.app(appScope: ApplicationScope, state: WindowState) {
-
         drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         drawerOffset = remember { mutableStateOf(drawerState.offset.value) }
         scaffoldState = rememberScaffoldState(drawerState = drawerState)
         coroutineScope = rememberCoroutineScope()
         windowState = state
         drawerSize = remember { mutableStateOf(DpSize(100.dp, 100.dp)) }
-        currentPage = remember { mutableStateOf(CurrentScreen.MAIN) }
-
-        size = remember { mutableStateOf(DpSize(300.dp, 300.dp)) }
-
-        windowState.size = size.value
+        currentScreen =
+            remember { mutableStateOf(if (firstExecution) CurrentScreen.FIRST_EXECUTION else CurrentScreen.MAIN) }
+        contentSize = remember { mutableStateOf(DpSize(300.dp, 300.dp)) }
+        windowState.size = contentSize.value
         window.minimumSize = Dimension(395, drawerSize.value.height.value.toInt())
+        monitoredFolder = remember { mutableStateOf(Preferences.monitoredFolder) }
 
         Scaffold(
             scaffoldState = scaffoldState,
@@ -114,10 +115,11 @@ object Gui {
                     .offset(y = menuBarHeight)
                     .background(Color(66, 98, 173, 240))
             ) {
-                when (currentPage.value) {
+                when (currentScreen.value) {
                     CurrentScreen.MAIN -> mainContent()
                     CurrentScreen.SETTINGS -> settingsContent()
                     CurrentScreen.ABOUT -> aboutContent()
+                    CurrentScreen.FIRST_EXECUTION -> firstExecution()
                 }
             }
         }
@@ -129,6 +131,28 @@ object Gui {
         Column(contentModifier()) {
             Text("Versão do java ${System.getProperty("java.version")}")
             Text("Versão do Sistema: ${props.getProperty("version")}")
+        }
+    }
+
+    @Composable
+    private fun firstExecution() {
+        var dbUpdated by remember { mutableStateOf(false) }
+        var selectedOperation by remember { mutableStateOf(false) }
+        Column(contentModifier()) {
+            Spacer(Modifier.size(5.dp))
+            Text("Primeira Execução:", modifier = Modifier, fontSize = 1.5.em, color = Color.White)
+            Button(onClick = {
+                coroutineScope.launch(Dispatchers.Default) { updateDatabase() }
+                dbUpdated = true
+            }) { Text("Atualizar banco de dados") }
+            Button(onClick = {
+                monitoredFolder.value = Preferences.selectMonitoredFolder()
+                selectedOperation = true
+            }) { Text("Selecionar local de operação") }
+        }
+        if (dbUpdated && selectedOperation) {
+            disableFirstExecutionWarning()
+            currentScreen.value = CurrentScreen.MAIN
         }
     }
 
@@ -148,7 +172,7 @@ object Gui {
              */
             Button(onClick = {
                 coroutineScope.launch(Dispatchers.Default) {
-                    processFiles(KotlinPath(monitoredFolder).listDirectoryEntries().map { it.toString() })
+                    processFiles(KotlinPath(monitoredFolder.value).listDirectoryEntries().map { it.toString() })
                 }
             }) {
                 Text("Executar Uma Vez")
@@ -161,7 +185,7 @@ object Gui {
     private fun settingsContent() {
         Row(contentModifier()) {
             Column {
-                Button(onClick = { Preferences.selectMonitoredFolder() }) {
+                Button(onClick = { monitoredFolder.value = Preferences.selectMonitoredFolder() }) {
                     Text("Selecionar local de operação")
                 }
 
@@ -175,7 +199,7 @@ object Gui {
                 }) {
                     Text("Atualizar banco de dados")
                 }
-                Button(onClick = { currentPage.value = CurrentScreen.ABOUT }) {
+                Button(onClick = { currentScreen.value = CurrentScreen.ABOUT }) {
                     Text("Sobre")
                 }
             }
@@ -202,9 +226,10 @@ object Gui {
             Column {
                 Text("Selkeys")
                 Text(
-                    "Operando em $monitoredFolder",
-                    Modifier.scale(0.8F).align(Alignment.Start),
-                    fontStyle = FontStyle.Italic
+                    "Operando em ${monitoredFolder.value}",
+                    Modifier.scale(0.8F),
+                    fontStyle = FontStyle.Italic,
+                    softWrap = false
                 )
             }
         },
@@ -238,13 +263,13 @@ object Gui {
             }
         ) {
             Column {
-                IconButton(onClick = { currentPage.value = CurrentScreen.MAIN }) {
+                IconButton(onClick = { currentScreen.value = CurrentScreen.MAIN }) {
                     Row {
                         Icon(Icons.Outlined.Home, contentDescription = "Página Principal")
                         Text("Página Principal")
                     }
                 }
-                IconButton(onClick = { currentPage.value = CurrentScreen.SETTINGS }) {
+                IconButton(onClick = { currentScreen.value = CurrentScreen.SETTINGS }) {
                     Row {
                         Icon(Icons.Filled.Build, contentDescription = "Configurações")
                         Text("Configurações")
@@ -307,7 +332,7 @@ object Gui {
         return Modifier
             .wrapContentWidth(unbounded = true)
             .offset(max(edgePadding, contentOffset.value.dp + drawerSize.value.width + edgePadding * 2))
-            .onSizeChanged { size.value = DpSize(it.width.dp, it.height.dp + topBarHeight + menuBarHeight) }
+            .onSizeChanged { contentSize.value = DpSize(it.width.dp, it.height.dp + topBarHeight + menuBarHeight) }
             .padding(end = edgePadding * 2)
     }
 
@@ -334,4 +359,5 @@ enum class CurrentScreen() {
     MAIN,
     SETTINGS,
     ABOUT,
+    FIRST_EXECUTION,
 }
