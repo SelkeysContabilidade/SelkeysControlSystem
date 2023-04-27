@@ -23,13 +23,14 @@ object RemoteConnector {
 
     class Procedure {
         var order = 0
+        var folder = false
         lateinit var type: String
         lateinit var content: String
     }
 
     class Translation {
         lateinit var key: String
-        lateinit var translation: String
+        lateinit var value: String
     }
 
     private var clientContainer: CosmosContainer? = null
