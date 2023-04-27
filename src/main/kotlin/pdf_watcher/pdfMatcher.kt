@@ -1,12 +1,15 @@
 package pdf_watcher
 
 import Preferences.monitoredFolder
+import Preferences.moveFiles
 import database.LocalDatabase
 import database.LocalDatabase.findAllDocuments
 import database.LocalDatabase.findTranslation
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.text.PDFTextStripper
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 
 fun pdfToTxt(filePath: String) = PDDocument
     .load(File(filePath))
@@ -57,7 +60,10 @@ fun processFiles(files: List<String>) {
         .filter { it.second != null }
         .forEach {
             try {
-                File(it.first).copyTo(File(it.second!!))
+                if (moveFiles) {
+                    Files.createDirectories(Paths.get(File(it.second!!).parent))
+                    File(it.first).renameTo(File(it.second!!))
+                } else File(it.first).copyTo(File(it.second!!))
             } catch (_: Exception) {
                 println(it.first)
             }

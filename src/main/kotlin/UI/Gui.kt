@@ -3,7 +3,9 @@ package UI
 import Preferences
 import Preferences.disableFirstExecutionWarning
 import Preferences.firstExecution
+import Preferences.moveFiles
 import Preferences.props
+import Preferences.toggleMoveFiles
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -188,7 +190,20 @@ object Gui {
                 Button(onClick = { monitoredFolder.value = Preferences.selectMonitoredFolder() }) {
                     Text("Selecionar local de operação")
                 }
-
+                var isChecked by remember { mutableStateOf(moveFiles) }
+                Button(onClick = { isChecked = toggleMoveFiles() }) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (isChecked) {
+                            Icon(painterResource("Icons/Move.svg"), "Move Files")
+                            Spacer(Modifier.width(5.dp))
+                            Text("Mover arquivos")
+                        } else {
+                            Icon(painterResource("Icons/Copy.svg"), "Copy Files")
+                            Spacer(Modifier.width(5.dp))
+                            Text("Copiar arquivos")
+                        }
+                    }
+                }
             }
             Spacer(Modifier.width(5.dp))
             Column {
@@ -203,18 +218,6 @@ object Gui {
                     Text("Sobre")
                 }
             }
-            /*
-            //TODO NOT IMPLEMENTED YET
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                var isChecked by remember { mutableStateOf(moveUnknownFiles) }
-                Checkbox(
-                    checked = isChecked,
-                    onCheckedChange = { isChecked = toggleMoveUnkownFiles() }
-                )
-                Text("Mover arquivos desconhecidos", softWrap = false)
-            }
-             */
-
         }
     }
 
@@ -239,18 +242,6 @@ object Gui {
             }
         }
     )
-
-
-    @Composable
-    private fun floatingButton() = ExtendedFloatingActionButton(
-        text = { Text("Open or close drawer") },
-        onClick = {
-            coroutineScope.launch {
-                scaffoldState.drawerState.apply { if (isClosed) open() else close() }
-            }
-        }
-    )
-
 
     @Composable
     private fun drawerContent() {
