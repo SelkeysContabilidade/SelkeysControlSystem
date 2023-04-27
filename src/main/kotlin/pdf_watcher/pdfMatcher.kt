@@ -14,24 +14,28 @@ fun pdfToTxt(filePath: String) = PDDocument
 
 fun matchPdf(files: List<String>) = files
     .filter { it.endsWith(".pdf") }
-    .map { file -> Pair(file, findAllDocuments().firstNotNullOfOrNull { buildDocumentName(it, pdfToTxt(file)) }) }
+    .map { file ->
+        val txtFile = pdfToTxt(file)
+        Pair(file, findAllDocuments().firstNotNullOfOrNull { buildDocumentName(it, txtFile) })
+    }
 
 
 fun buildDocumentName(document: LocalDatabase.Document, file: String): String? {
     if (document.identifier.toRegex() !in file) return null
-    val client = LocalDatabase.findByRegistry(document.registryRegex.toRegex().find(file)?.value.orEmpty())
+    val registry = document.registryRegex.toRegex().find(file)?.value.orEmpty().replace("[^0-9]".toRegex(), "")
+    val client = LocalDatabase.findByRegistry(registry)
     var filename = ""
     var folder = document.baseFolderStructure
     document.getProceduresOrdered().forEach {
-        when (it.type) {
-            "clientFolder" -> folder += client?.baseFolderStructure ?: it.content
-            "folderRegex" -> folder += it.content.toRegex().find(file)?.value
-            "folderRegexTranslated" -> folder += findTranslation(it.content.toRegex().find(file)?.value.orEmpty())
-            "folderString" -> folder += it.content
-            "fileString" -> filename += it.content
-            "nickname" -> filename += (client?.nickname ?: it.content) + " "
-            "fileRegex" -> filename += it.content.toRegex().find(file)?.value
+        val name = when (it.type) {
+            "clientFolder" -> client?.baseFolderStructure ?: it.content.plus(" $registry").trim()
+            "nickname" -> (client?.nickname ?: it.content.plus(" $registry").trim()) + " "
+            "regex" -> it.content.toRegex().find(file)?.value.orEmpty()
+            "regexTranslated" -> findTranslation(it.content.toRegex().find(file)?.value.orEmpty())
+            "string" -> it.content
+            else -> ""
         }
+        if (it.isFolder) folder += name else filename += name
     }
     return "$monitoredFolder/" + folder + filename.replace("/".toRegex(), "_")
 }
@@ -55,7 +59,7 @@ fun processFiles(files: List<String>) {
             try {
                 File(it.first).copyTo(File(it.second!!))
             } catch (_: Exception) {
-
+                println(it.first)
             }
         }
     val nameZip = matchZip()

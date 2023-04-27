@@ -8,7 +8,9 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 
 
@@ -56,6 +58,7 @@ object LocalDatabase {
                 transaction {
                     Procedure.new {
                         type = it.type
+                        isFolder = it.folder
                         content = it.content
                         order = it.order
                         this.document = document
@@ -67,25 +70,20 @@ object LocalDatabase {
             transaction {
                 Translation.new {
                     key = it.key
-                    translation = it.translation
+                    value = it.value
                 }
             }
         }
     }
 
     fun findByRegistry(registry: String): Client? = transaction(db) {
-        Client.find { Clients.registry eq registry.replace("[^0-9]".toRegex(), "") }.firstOrNull()
+        Client.find { Clients.registry eq registry }.firstOrNull()
     }
 
     fun findTranslation(key: String): String = transaction(db) {
-        Translation.find { Translations.key eq key }.firstOrNull()?.translation.orEmpty()
+        Translation.find { Translations.key eq key }.firstOrNull()?.value.orEmpty()
     }
-
-    fun findAllClients(): List<Client> = transaction(db) {
-        Clients.selectAll().map { transaction { Client.wrapRow(it) } }.toList()
-    }
-
-
+    
     fun findAllDocuments(): List<Document> = transaction(db) {
         Documents.selectAll().map { transaction { Document.wrapRow(it) } }.toList()
     }
@@ -94,7 +92,7 @@ object LocalDatabase {
         companion object : IntEntityClass<Translation>(Translations)
 
         var key by Translations.key
-        var translation by Translations.translation
+        var value by Translations.translation
     }
 
     private object Translations : IntIdTable() {
@@ -105,6 +103,7 @@ object LocalDatabase {
     class Procedure(id: EntityID<Int>) : IntEntity(id) {
         companion object : IntEntityClass<Procedure>(Procedures)
 
+        var isFolder by Procedures.isFolder
         var type by Procedures.type
         var content by Procedures.content
         var order by Procedures.order
@@ -112,6 +111,7 @@ object LocalDatabase {
     }
 
     private object Procedures : IntIdTable() {
+        val isFolder = bool("folder")
         val type = text("type")
         val content = text("content")
         val order = integer("order")

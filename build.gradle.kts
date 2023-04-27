@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "br.com.selkeys"
-version = "1.1.1"
+version = "1.1.2"
 java.toolchain.languageVersion.set(JavaLanguageVersion.of(19))
 compose.desktop.application.mainClass = "MainKt"
 
