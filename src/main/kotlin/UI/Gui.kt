@@ -7,7 +7,6 @@ import Preferences.moveFiles
 import Preferences.props
 import Preferences.toggleMoveFiles
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -84,12 +83,12 @@ object Gui {
     private lateinit var monitoredFolder: MutableState<String>
 
 
-    @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
+    @OptIn(ExperimentalMaterialApi::class)
     @Composable
     @Preview
     fun FrameWindowScope.app(appScope: ApplicationScope, state: WindowState) {
         drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-        drawerOffset = remember { mutableStateOf(drawerState.offset.value) }
+        drawerOffset = remember { mutableStateOf(drawerState.offset ?: 0F) }
         scaffoldState = rememberScaffoldState(drawerState = drawerState)
         coroutineScope = rememberCoroutineScope()
         windowState = state
@@ -101,6 +100,10 @@ object Gui {
         window.minimumSize = Dimension(395, drawerSize.value.height.value.toInt())
         monitoredFolder = remember { mutableStateOf(Preferences.monitoredFolder) }
 
+        //not accessing the window state here breaks the first composition because it doesn't get properly updated
+        //seems to be a bug in compose 1.4.0
+        windowState.size
+
         Scaffold(
             scaffoldState = scaffoldState,
             topBar = { topBar() },
@@ -109,7 +112,6 @@ object Gui {
             drawerElevation = edgePadding,
             drawerShape = drawerSize(),
             drawerContent = { drawerContent() },
-//                floatingActionButton = { floatingButton() }
         ) {
             Box(
                 Modifier
@@ -319,7 +321,7 @@ object Gui {
     @OptIn(ExperimentalMaterialApi::class)
     @Composable
     private fun contentModifier(): Modifier {
-        val contentOffset = remember { derivedStateOf { drawerState.offset.value } }
+        val contentOffset = remember { derivedStateOf { drawerState.offset ?: 0F } }
         return Modifier
             .wrapContentWidth(unbounded = true)
             .offset(max(edgePadding, contentOffset.value.dp + drawerSize.value.width + edgePadding * 2))
