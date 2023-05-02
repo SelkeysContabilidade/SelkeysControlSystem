@@ -41,6 +41,7 @@ import androidx.compose.ui.window.WindowState
 import database.LocalDatabase.updateDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import pdf_watcher.processFiles
 import java.awt.Dimension
@@ -174,6 +175,19 @@ object Gui {
                 Text("Monitorar Pasta")
             }
              */
+
+            var progress by remember { mutableStateOf(0F) }
+            LinearProgressIndicator(progress = progress, color = Color.LightGray)
+            Button(onClick = {
+                coroutineScope.launch(Dispatchers.Default) {
+                    while (progress < 1) {
+                        delay(100)
+                        progress += 0.1F
+                    }
+                }
+            }) {
+                Text("Progress")
+            }
             Button(onClick = {
                 coroutineScope.launch(Dispatchers.Default) {
                     processFiles(KotlinPath(monitoredFolder.value).listDirectoryEntries().map { it.toString() })
