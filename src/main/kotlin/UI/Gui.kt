@@ -42,6 +42,7 @@ import database.LocalDatabase.updateDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import pdf_watcher.FolderMonitor
 import pdf_watcher.processFiles
 import java.awt.Dimension
 import java.nio.file.Path
@@ -162,18 +163,24 @@ object Gui {
 
     @Composable
     private fun mainContent() {
-        Column(
+        Row(
             contentModifier(),
-            verticalArrangement = Arrangement.spacedBy(5.dp)
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            /*
-            //TODO NOT IMPLEMENTED YET
-            Button(onClick = {
-                processFiles(KotlinPath(monitoredFolder).listDirectoryEntries().map { it.toString() })
-            }) {
-                Text("Monitorar Pasta")
+            var monitoring by remember { mutableStateOf(false) }
+            Button(onClick = { monitoring = FolderMonitor.toggleMonitor(coroutineScope) }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (monitoring) {
+                        Icon(painterResource("Icons/Eye.svg"), null)
+                        Spacer(Modifier.width(5.dp))
+                        Text("Monitoramento Ativado")
+                    } else {
+                        Icon(painterResource("Icons/Eye_Off.svg"), null)
+                        Spacer(Modifier.width(5.dp))
+                        Text("Monitoramento Desativado")
+                    }
+                }
             }
-             */
             Button(onClick = {
                 coroutineScope.launch(Dispatchers.Default) {
                     processFiles(KotlinPath(monitoredFolder.value).listDirectoryEntries().map { it.toString() })
