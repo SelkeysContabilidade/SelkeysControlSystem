@@ -2,7 +2,6 @@ package pdf_watcher
 
 import Preferences.monitoredFolder
 import Preferences.moveFiles
-import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import database.LocalDatabase
 import database.LocalDatabase.findAllDocuments
 import database.LocalDatabase.findTranslation
