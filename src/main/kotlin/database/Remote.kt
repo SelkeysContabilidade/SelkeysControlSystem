@@ -9,7 +9,7 @@ import com.azure.identity.InteractiveBrowserCredentialBuilder
 
 object RemoteConnector {
     class Client {
-        lateinit var registry: String
+        lateinit var registry: List<String>
         lateinit var baseFolderStructure: String
         lateinit var nickname: String
     }

@@ -28,6 +28,7 @@ object LocalDatabase {
         //clear all local databases
         transaction(db) {
             Procedures.dropStatement().forEach(::exec)
+            Registries.dropStatement().forEach(::exec)
             Documents.dropStatement().forEach(::exec)
             Clients.dropStatement().forEach(::exec)
             Translations.dropStatement().forEach(::exec)
@@ -35,14 +36,22 @@ object LocalDatabase {
             SchemaUtils.create(Documents)
             SchemaUtils.create(Clients)
             SchemaUtils.create(Procedures)
+            SchemaUtils.create(Registries)
         }
         //adding source data to the local
         sourceClients.forEach {
-            transaction {
+            val client = transaction {
                 Client.new {
-                    registry = it.registry
                     baseFolderStructure = it.baseFolderStructure
                     nickname = it.nickname
+                }
+            }
+            it.registry.forEach {
+                transaction {
+                    Registry.new {
+                        registry = it
+                        this.client = client
+                    }
                 }
             }
         }
@@ -77,13 +86,13 @@ object LocalDatabase {
     }
 
     fun findByRegistry(registry: String): Client? = transaction(db) {
-        Client.find { Clients.registry eq registry }.firstOrNull()
+        Registry.find { Registries.registry eq registry }.firstOrNull()?.client
     }
 
     fun findTranslation(key: String): String = transaction(db) {
-        Translation.find { Translations.key eq key }.firstOrNull()?.value.orEmpty()
+        Translation.find { Translations.key eq key }.firstOrNull()?.value ?: key
     }
-    
+
     fun findAllDocuments(): List<Document> = transaction(db) {
         Documents.selectAll().map { transaction { Document.wrapRow(it) } }.toList()
     }
@@ -110,12 +119,24 @@ object LocalDatabase {
         var document by Document referencedOn Procedures.document
     }
 
+    class Registry(id: EntityID<Int>) : IntEntity(id) {
+        companion object : IntEntityClass<Registry>(Registries)
+
+        var registry by Registries.registry
+        var client by Client referencedOn Registries.client
+    }
+
     private object Procedures : IntIdTable() {
         val isFolder = bool("folder")
         val type = text("type")
         val content = text("content")
         val order = integer("order")
         val document = reference("document", Documents)
+    }
+
+    private object Registries : IntIdTable() {
+        val registry = text("registry")
+        val client = reference("client", Clients)
     }
 
     class Document(id: EntityID<Int>) : IntEntity(id) {
@@ -137,13 +158,11 @@ object LocalDatabase {
     class Client(id: EntityID<Int>) : IntEntity(id) {
         companion object : IntEntityClass<Client>(Clients)
 
-        var registry by Clients.registry
         var baseFolderStructure by Clients.baseFolderStructure
         var nickname by Clients.nickname
     }
 
     private object Clients : IntIdTable() {
-        val registry = text("registry").uniqueIndex()
         val baseFolderStructure = text("baseFolderStructure", eagerLoading = true)
         val nickname = text("nickname")
     }
