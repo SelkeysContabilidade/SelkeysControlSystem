@@ -39,4 +39,6 @@ object FolderMonitor {
             true
         }
     }
+
+    fun monitorState() = if (watchKey != null && coroutine != null) true else false
 }

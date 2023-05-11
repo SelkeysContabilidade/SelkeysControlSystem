@@ -167,7 +167,7 @@ object Gui {
             contentModifier(),
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            var monitoring by remember { mutableStateOf(false) }
+            var monitoring by remember { mutableStateOf(FolderMonitor.monitorState()) }
             Button(onClick = { monitoring = FolderMonitor.toggleMonitor(coroutineScope) }) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (monitoring) {
@@ -203,10 +203,10 @@ object Gui {
                     Spacer(Modifier.width(5.dp))
                     Text("Selecionar local de operação")
                 }
-                var isChecked by remember { mutableStateOf(moveFiles) }
-                Button(onClick = { isChecked = toggleMoveFiles() }) {
+                var moveFilesButton by remember { mutableStateOf(moveFiles) }
+                Button(onClick = { moveFilesButton = toggleMoveFiles() }) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (isChecked) {
+                        if (moveFilesButton) {
                             Icon(painterResource("Icons/Move.svg"), "Move Files")
                             Spacer(Modifier.width(5.dp))
                             Text("Mover arquivos")
