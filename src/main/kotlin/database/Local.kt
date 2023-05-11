@@ -1,6 +1,7 @@
 package database
 
 import Preferences.props
+import com.azure.cosmos.util.CosmosPagedIterable
 import database.RemoteConnector.queryRemoteClients
 import database.RemoteConnector.queryRemoteDocuments
 import database.RemoteConnector.queryRemoteTranslations
@@ -19,10 +20,17 @@ object LocalDatabase {
 
     fun updateDatabase() {
         //fetch remote clients before doing anything
-        val sourceClients = queryRemoteClients()
-        val sourceDocuments = queryRemoteDocuments()
-        val sourceTranslations = queryRemoteTranslations()
-        if (sourceClients == null || sourceDocuments == null || sourceTranslations == null) {
+        val sourceClients: CosmosPagedIterable<RemoteConnector.Client>?
+        val sourceDocuments: CosmosPagedIterable<RemoteConnector.Document>?
+        val sourceTranslations: CosmosPagedIterable<RemoteConnector.Translation>?
+        try {
+            sourceClients = queryRemoteClients()
+            sourceDocuments = queryRemoteDocuments()
+            sourceTranslations = queryRemoteTranslations()
+            if ((sourceClients == null) || (sourceDocuments == null) || (sourceTranslations == null)) {
+                return
+            }
+        } catch (_: Exception) {
             return
         }
         //clear all local databases
