@@ -6,7 +6,7 @@ import javax.swing.UIManager
 object Preferences {
     var monitoredFolder: String
     var firstExecution: Boolean
-    var moveUnknownFiles: Boolean
+    var moveFiles: Boolean
 
     private val prefs: Preferences = Preferences.userNodeForPackage(Preferences::class.java)
     val props = Properties()
@@ -14,7 +14,7 @@ object Preferences {
 
     init {
         monitoredFolder = prefs.get("monitoredFolder", System.getProperty("user.dir"))
-        moveUnknownFiles = prefs.get("moveUnkownFiles", "false").toBoolean()
+        moveFiles = prefs.get("moveFiles", "false").toBoolean()
         firstExecution = prefs.get("firstExecution", "true").toBoolean()
         Thread
             .currentThread()
@@ -40,11 +40,10 @@ object Preferences {
 
     fun disableFirstExecutionWarning() = prefs.put("firstExecution", "false")
 
-    fun toggleMoveUnkownFiles(): Boolean {
-//        println(moveUnknownFiles)
-        moveUnknownFiles = !moveUnknownFiles
-        prefs.put("moveUnkownFiles", moveUnknownFiles.toString())
-        return moveUnknownFiles
+    fun toggleMoveFiles(): Boolean {
+        moveFiles = !moveFiles
+        prefs.put("moveFiles", moveFiles.toString())
+        return moveFiles
     }
 
 }

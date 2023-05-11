@@ -3,9 +3,10 @@ package UI
 import Preferences
 import Preferences.disableFirstExecutionWarning
 import Preferences.firstExecution
+import Preferences.moveFiles
 import Preferences.props
+import Preferences.toggleMoveFiles
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -41,6 +42,7 @@ import database.LocalDatabase.updateDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import pdf_watcher.FolderMonitor
 import pdf_watcher.processFiles
 import java.awt.Dimension
 import java.nio.file.Path
@@ -82,12 +84,12 @@ object Gui {
     private lateinit var monitoredFolder: MutableState<String>
 
 
-    @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
+    @OptIn(ExperimentalMaterialApi::class)
     @Composable
     @Preview
     fun FrameWindowScope.app(appScope: ApplicationScope, state: WindowState) {
         drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-        drawerOffset = remember { mutableStateOf(drawerState.offset.value) }
+        drawerOffset = remember { mutableStateOf(drawerState.offset ?: 0F) }
         scaffoldState = rememberScaffoldState(drawerState = drawerState)
         coroutineScope = rememberCoroutineScope()
         windowState = state
@@ -99,6 +101,10 @@ object Gui {
         window.minimumSize = Dimension(395, drawerSize.value.height.value.toInt())
         monitoredFolder = remember { mutableStateOf(Preferences.monitoredFolder) }
 
+        //not accessing the window state here breaks the first composition because it doesn't get properly updated
+        //seems to be a bug in compose 1.4.0
+        windowState.size
+
         Scaffold(
             scaffoldState = scaffoldState,
             topBar = { topBar() },
@@ -107,7 +113,6 @@ object Gui {
             drawerElevation = edgePadding,
             drawerShape = drawerSize(),
             drawerContent = { drawerContent() },
-//                floatingActionButton = { floatingButton() }
         ) {
             Box(
                 Modifier
@@ -158,23 +163,31 @@ object Gui {
 
     @Composable
     private fun mainContent() {
-        Column(
+        Row(
             contentModifier(),
-            verticalArrangement = Arrangement.spacedBy(5.dp)
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            /*
-            //TODO NOT IMPLEMENTED YET
-            Button(onClick = {
-                processFiles(KotlinPath(monitoredFolder).listDirectoryEntries().map { it.toString() })
-            }) {
-                Text("Monitorar Pasta")
+            var monitoring by remember { mutableStateOf(FolderMonitor.monitorState()) }
+            Button(onClick = { monitoring = FolderMonitor.toggleMonitor(coroutineScope) }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (monitoring) {
+                        Icon(painterResource("Icons/Eye.svg"), null)
+                        Spacer(Modifier.width(5.dp))
+                        Text("Monitoramento Ativado")
+                    } else {
+                        Icon(painterResource("Icons/Eye_Off.svg"), null)
+                        Spacer(Modifier.width(5.dp))
+                        Text("Monitoramento Desativado")
+                    }
+                }
             }
-             */
             Button(onClick = {
                 coroutineScope.launch(Dispatchers.Default) {
                     processFiles(KotlinPath(monitoredFolder.value).listDirectoryEntries().map { it.toString() })
                 }
             }) {
+                Icon(painterResource("Icons/Play.svg"), null)
+                Spacer(Modifier.width(5.dp))
                 Text("Executar Uma Vez")
             }
         }
@@ -186,9 +199,24 @@ object Gui {
         Row(contentModifier()) {
             Column {
                 Button(onClick = { monitoredFolder.value = Preferences.selectMonitoredFolder() }) {
+                    Icon(painterResource("Icons/Folder_Open.svg"), "Move Files")
+                    Spacer(Modifier.width(5.dp))
                     Text("Selecionar local de operação")
                 }
-
+                var moveFilesButton by remember { mutableStateOf(moveFiles) }
+                Button(onClick = { moveFilesButton = toggleMoveFiles() }) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (moveFilesButton) {
+                            Icon(painterResource("Icons/Move.svg"), "Move Files")
+                            Spacer(Modifier.width(5.dp))
+                            Text("Mover arquivos")
+                        } else {
+                            Icon(painterResource("Icons/Copy.svg"), "Copy Files")
+                            Spacer(Modifier.width(5.dp))
+                            Text("Copiar arquivos")
+                        }
+                    }
+                }
             }
             Spacer(Modifier.width(5.dp))
             Column {
@@ -197,24 +225,16 @@ object Gui {
                         updateDatabase()
                     }
                 }) {
+                    Icon(painterResource("Icons/Sync.svg"), null)
+                    Spacer(Modifier.width(5.dp))
                     Text("Atualizar banco de dados")
                 }
                 Button(onClick = { currentScreen.value = CurrentScreen.ABOUT }) {
+                    Icon(painterResource("Icons/Info.svg"), null)
+                    Spacer(Modifier.width(5.dp))
                     Text("Sobre")
                 }
             }
-            /*
-            //TODO NOT IMPLEMENTED YET
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                var isChecked by remember { mutableStateOf(moveUnknownFiles) }
-                Checkbox(
-                    checked = isChecked,
-                    onCheckedChange = { isChecked = toggleMoveUnkownFiles() }
-                )
-                Text("Mover arquivos desconhecidos", softWrap = false)
-            }
-             */
-
         }
     }
 
@@ -239,18 +259,6 @@ object Gui {
             }
         }
     )
-
-
-    @Composable
-    private fun floatingButton() = ExtendedFloatingActionButton(
-        text = { Text("Open or close drawer") },
-        onClick = {
-            coroutineScope.launch {
-                scaffoldState.drawerState.apply { if (isClosed) open() else close() }
-            }
-        }
-    )
-
 
     @Composable
     private fun drawerContent() {
@@ -328,7 +336,7 @@ object Gui {
     @OptIn(ExperimentalMaterialApi::class)
     @Composable
     private fun contentModifier(): Modifier {
-        val contentOffset = remember { derivedStateOf { drawerState.offset.value } }
+        val contentOffset = remember { derivedStateOf { drawerState.offset ?: 0F } }
         return Modifier
             .wrapContentWidth(unbounded = true)
             .offset(max(edgePadding, contentOffset.value.dp + drawerSize.value.width + edgePadding * 2))
