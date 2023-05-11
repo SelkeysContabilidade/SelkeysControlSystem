@@ -179,6 +179,8 @@ object Gui {
                     processFiles(KotlinPath(monitoredFolder.value).listDirectoryEntries().map { it.toString() })
                 }
             }) {
+                Icon(painterResource("Icons/Play.svg"), null)
+                Spacer(Modifier.width(5.dp))
                 Text("Executar Uma Vez")
             }
         }
@@ -190,6 +192,8 @@ object Gui {
         Row(contentModifier()) {
             Column {
                 Button(onClick = { monitoredFolder.value = Preferences.selectMonitoredFolder() }) {
+                    Icon(painterResource("Icons/Folder_Open.svg"), "Move Files")
+                    Spacer(Modifier.width(5.dp))
                     Text("Selecionar local de operação")
                 }
                 var isChecked by remember { mutableStateOf(moveFiles) }
@@ -214,9 +218,13 @@ object Gui {
                         updateDatabase()
                     }
                 }) {
+                    Icon(painterResource("Icons/Sync.svg"), null)
+                    Spacer(Modifier.width(5.dp))
                     Text("Atualizar banco de dados")
                 }
                 Button(onClick = { currentScreen.value = CurrentScreen.ABOUT }) {
+                    Icon(painterResource("Icons/Info.svg"), null)
+                    Spacer(Modifier.width(5.dp))
                     Text("Sobre")
                 }
             }
