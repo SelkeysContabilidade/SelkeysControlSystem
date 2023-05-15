@@ -1,3 +1,5 @@
+import pdf_watcher.FolderMonitor.monitorState
+import pdf_watcher.FolderMonitor.toggleMonitor
 import java.util.*
 import java.util.prefs.Preferences
 import javax.swing.JFileChooser
@@ -37,6 +39,7 @@ object Preferences {
             monitoredFolder = it.selectedFile?.toString() ?: selectMonitoredFolder("Diretório invalido")
         }
         prefs.put("monitoredFolder", monitoredFolder)
+        if (monitorState()) toggleMonitor()
         return monitoredFolder
     }
 

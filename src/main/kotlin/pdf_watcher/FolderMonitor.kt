@@ -22,7 +22,7 @@ object FolderMonitor {
         }
 
 
-    fun toggleMonitor(coroutineScope: CoroutineScope): Boolean {
+    fun toggleMonitor(): Boolean {
         return if (watchKey != null) {
             watchKey?.cancel()
             coroutine?.cancel()
@@ -31,7 +31,7 @@ object FolderMonitor {
             false
         } else {
             watchKey = Path(monitoredFolder).register(watchService, StandardWatchEventKinds.ENTRY_CREATE)
-            coroutine = coroutineScope.launch(Dispatchers.Default) {
+            coroutine = CoroutineScope(Dispatchers.Default).launch {
                 while (watchKey != null) {
                     processFiles(getChangedFiles())
                 }
@@ -40,5 +40,5 @@ object FolderMonitor {
         }
     }
 
-    fun monitorState() = if (watchKey != null && coroutine != null) true else false
+    fun monitorState() = watchKey != null && coroutine != null
 }

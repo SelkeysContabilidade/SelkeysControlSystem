@@ -13,12 +13,13 @@ import java.nio.file.Paths
 
 fun matchPdf(files: List<String>): List<Pair<String, String>> {
     val documents = findAllDocuments()
+    val stripper = PDFTextStripper()
     return files
         .map { file ->
             try {
                 val txtFile = PDDocument
                     .load(File(file))
-                    .use { PDFTextStripper().getText(it).replace("[\\s ]+".toRegex(), " ") }
+                    .use { stripper.getText(it).replace("[\\s ]+".toRegex(), " ") }
                 Pair(file, documents.firstNotNullOfOrNull { buildDocumentName(it, txtFile) })
             } catch (_: Exception) {
                 Pair("", null)

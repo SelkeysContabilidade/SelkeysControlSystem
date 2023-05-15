@@ -168,7 +168,7 @@ object Gui {
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             var monitoring by remember { mutableStateOf(FolderMonitor.monitorState()) }
-            Button(onClick = { monitoring = FolderMonitor.toggleMonitor(coroutineScope) }) {
+            Button(onClick = { monitoring = FolderMonitor.toggleMonitor() }) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (monitoring) {
                         Icon(painterResource("Icons/Eye.svg"), null)
