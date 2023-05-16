@@ -11,37 +11,20 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 
-fun matchPdf(files: List<String>): List<Pair<String, String>> {
-    val documents = findAllDocuments()
-    val stripper = PDFTextStripper()
-    return files
-        .map { file ->
-            try {
-                val txtFile = PDDocument
-                    .load(File(file))
-                    .use { stripper.getText(it).replace("[\\s ]+".toRegex(), " ") }
-                Pair(file, documents.firstNotNullOfOrNull { buildDocumentName(it, txtFile) })
-            } catch (_: Exception) {
-                Pair("", null)
-            }
-        }
-        .mapNotNull { if (it.second != null) Pair(it.first, it.second!!) else null }
-}
-
-fun matchOfx(files: List<String>): List<Pair<String, String>> {
+fun match(files: List<String>, fileFunction: (String) -> String): List<Pair<String, String>> {
     val documents = findAllDocuments()
     return files
         .map { file ->
-            val txtFile = File(file).readText().replace("[\r\n\t ]+".toRegex(), " ")
-            Pair(file, documents.firstNotNullOfOrNull { buildDocumentName(it, txtFile) })
+            val txtFile = fileFunction(file)
+            Pair(file, documents.firstNotNullOfOrNull { buildDocumentName(it, txtFile, file) })
         }
         .mapNotNull { if (it.second != null) Pair(it.first, it.second!!) else null }
 }
 
 
-fun buildDocumentName(document: LocalDatabase.Document, file: String): String? {
-    if (document.identifier.toRegex() !in file) return null
-    var registry = document.registryRegex.toRegex().find(file)?.value.orEmpty()
+fun buildDocumentName(document: LocalDatabase.Document, content: String, fileName: String): String? {
+    if (document.identifier.toRegex() !in content) return null
+    var registry = document.registryRegex.toRegex().find(content)?.value.orEmpty()
     val client = LocalDatabase.findByRegistry(registry)
     registry = registry.replace("/".toRegex(), "_").replace("[^0-9_.]*".toRegex(), "")
     var filename = ""
@@ -50,8 +33,9 @@ fun buildDocumentName(document: LocalDatabase.Document, file: String): String? {
         val name = when (it.type) {
             "clientFolder" -> client?.baseFolderStructure ?: it.content.plus(" $registry").trim()
             "nickname" -> (client?.nickname ?: it.content.plus(" $registry").trim()) + " "
-            "regex" -> it.content.toRegex().find(file)?.value.orEmpty()
-            "regexTranslated" -> findTranslation(it.content.toRegex().find(file)?.value.orEmpty())
+            "regex" -> it.content.toRegex().find(content)?.value.orEmpty()
+            "regexTranslated" -> findTranslation(it.content.toRegex().find(content)?.value.orEmpty())
+            "regexFilename" -> it.content.toRegex().find(fileName)?.value.orEmpty()
             "string" -> it.content
             else -> ""
         }
@@ -60,25 +44,22 @@ fun buildDocumentName(document: LocalDatabase.Document, file: String): String? {
     return "$monitoredFolder/" + folder + filename.replace("/".toRegex(), "_")
 }
 
-fun matchXml(): Any {
-    //TODO
-    return ""
-
-}
-
-fun matchZip(): Any {
-    //TODO
-    return ""
-}
-
 fun processFiles(files: List<String>) {
-    matchPdf(files.filter { it.endsWith(".pdf") }).forEach(::moveOrCopy)
-    matchOfx(files.filter { it.endsWith(".ofx") }).forEach(::moveOrCopy)
-//    matchZip(files.filter { it.endsWith(".zip") })
-//    matchXml(files.filter { it.endsWith(".xml") })
+    match(files.filter { it.endsWith(".pdf") }) {
+        try {
+            PDDocument.load(File(it)).use { PDFTextStripper().getText(it).replace("[\\s ]+".toRegex(), " ") }
+        } catch (_: Exception) {
+            ""
+        }
+    }.forEach(::moveOrCopy)
+    match(files.filter { it.endsWith(".ofx") }) {
+        File(it).readText().replace("[\r\n\t ]+".toRegex(), " ")
+    }.forEach(::moveOrCopy)
+//    match(files.filter { it.endsWith(".zip") })
+//    match(files.filter { it.endsWith(".xml") })
 }
 
-private fun moveOrCopy(sourceDest: Pair<String, String>) {
+fun moveOrCopy(sourceDest: Pair<String, String>) {
     val (source, destination) = sourceDest
     try {
         if (moveFiles) {
