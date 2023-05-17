@@ -38,7 +38,7 @@ import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowState
-import database.LocalDatabase.updateDatabase
+import database.LocalDatabase.resyncDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -147,7 +147,7 @@ object Gui {
             Spacer(Modifier.size(5.dp))
             Text("Primeira Execução:", modifier = Modifier, fontSize = 1.5.em, color = Color.White)
             Button(onClick = {
-                coroutineScope.launch(Dispatchers.Default) { updateDatabase() }
+                coroutineScope.launch(Dispatchers.Default) { resyncDatabase() }
                 dbUpdated = true
             }) { Text("Atualizar banco de dados") }
             Button(onClick = {
@@ -221,9 +221,7 @@ object Gui {
             Spacer(Modifier.width(5.dp))
             Column {
                 Button(onClick = {
-                    coroutineScope.launch(Dispatchers.Default) {
-                        updateDatabase()
-                    }
+                    coroutineScope.launch(Dispatchers.Default) { resyncDatabase() }
                 }) {
                     Icon(painterResource("Icons/Sync.svg"), null)
                     Spacer(Modifier.width(5.dp))

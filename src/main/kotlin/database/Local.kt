@@ -5,6 +5,8 @@ import com.azure.cosmos.util.CosmosPagedIterable
 import database.RemoteConnector.queryRemoteClients
 import database.RemoteConnector.queryRemoteDocuments
 import database.RemoteConnector.queryRemoteTranslations
+import kotlinx.coroutines.newSingleThreadContext
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -17,8 +19,11 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 object LocalDatabase {
     private val db = Database.connect(props.getProperty("localDatabase"), driver = "org.h2.Driver", "Selkeys", "")
+    private val coroutineContext = newSingleThreadContext("localDatabase")
 
-    fun updateDatabase() {
+
+    fun resyncDatabase() = runBlocking(coroutineContext) {
+
         //fetch remote clients before doing anything
         val sourceClients: CosmosPagedIterable<RemoteConnector.Client>?
         val sourceDocuments: CosmosPagedIterable<RemoteConnector.Document>?
@@ -28,10 +33,10 @@ object LocalDatabase {
             sourceDocuments = queryRemoteDocuments()
             sourceTranslations = queryRemoteTranslations()
             if ((sourceClients == null) || (sourceDocuments == null) || (sourceTranslations == null)) {
-                return
+                return@runBlocking
             }
         } catch (_: Exception) {
-            return
+            return@runBlocking
         }
         //clear all local databases
         transaction(db) {
@@ -93,16 +98,22 @@ object LocalDatabase {
         }
     }
 
-    fun findByRegistry(registry: String): Client? = transaction(db) {
-        Registry.find { Registries.registry eq registry }.firstOrNull()?.client
+    fun findByRegistry(registry: String): Client? = runBlocking(coroutineContext) {
+        transaction(db) {
+            Registry.find { Registries.registry eq registry }.firstOrNull()?.client
+        }
     }
 
-    fun findTranslation(key: String): String = transaction(db) {
-        Translation.find { Translations.key eq key }.firstOrNull()?.value ?: key
+    fun findTranslation(key: String): String = runBlocking(coroutineContext) {
+        transaction(db) {
+            Translation.find { Translations.key eq key }.firstOrNull()?.value ?: key
+        }
     }
 
-    fun findAllDocuments(): List<Document> = transaction(db) {
-        Documents.selectAll().map { transaction { Document.wrapRow(it) } }.toList()
+    fun findAllDocuments(): List<Document> = runBlocking(coroutineContext) {
+        transaction(db) {
+            Documents.selectAll().map { transaction { Document.wrapRow(it) } }.toList()
+        }
     }
 
     class Translation(id: EntityID<Int>) : IntEntity(id) {
