@@ -17,7 +17,8 @@ object Preferences {
 
     init {
         monitoredFolder = prefs.get("monitoredFolder", System.getProperty("user.dir"))
-        authRecordFilePath = prefs.get("authRecordFilePath", "${System.getProperty("user.home")}/.selkeys/tokencache")
+        authRecordFilePath =
+            props.getProperty("authRecordFilePath", "${System.getProperty("user.home")}/.selkeys/tokenCache")
         moveFiles = prefs.get("moveFiles", "false").toBoolean()
         firstExecution = prefs.get("firstExecution", "true").toBoolean()
         Thread
