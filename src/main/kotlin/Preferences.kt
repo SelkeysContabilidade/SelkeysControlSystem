@@ -1,3 +1,5 @@
+import pdf_watcher.FolderMonitor.monitorState
+import pdf_watcher.FolderMonitor.toggleMonitor
 import java.util.*
 import java.util.prefs.Preferences
 import javax.swing.JFileChooser
@@ -7,6 +9,7 @@ object Preferences {
     var monitoredFolder: String
     var firstExecution: Boolean
     var moveFiles: Boolean
+    var authRecordFilePath: String
 
     private val prefs: Preferences = Preferences.userNodeForPackage(Preferences::class.java)
     val props = Properties()
@@ -14,6 +17,8 @@ object Preferences {
 
     init {
         monitoredFolder = prefs.get("monitoredFolder", System.getProperty("user.dir"))
+        authRecordFilePath =
+            props.getProperty("authRecordFilePath", "${System.getProperty("user.home")}/.selkeys/tokenCache")
         moveFiles = prefs.get("moveFiles", "false").toBoolean()
         firstExecution = prefs.get("firstExecution", "true").toBoolean()
         Thread
@@ -35,6 +40,7 @@ object Preferences {
             monitoredFolder = it.selectedFile?.toString() ?: selectMonitoredFolder("Diretório invalido")
         }
         prefs.put("monitoredFolder", monitoredFolder)
+        if (monitorState()) toggleMonitor()
         return monitoredFolder
     }
 

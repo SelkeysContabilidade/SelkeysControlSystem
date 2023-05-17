@@ -1,11 +1,16 @@
 package database
 
+import Preferences.authRecordFilePath
 import Preferences.props
 import com.azure.cosmos.CosmosClientBuilder
 import com.azure.cosmos.CosmosContainer
 import com.azure.cosmos.models.CosmosQueryRequestOptions
 import com.azure.cosmos.util.CosmosPagedIterable
+import com.azure.identity.AuthenticationRecord
+import com.azure.identity.InteractiveBrowserCredential
 import com.azure.identity.InteractiveBrowserCredentialBuilder
+import com.azure.identity.TokenCachePersistenceOptions
+import java.io.File
 
 object RemoteConnector {
     class Client {
@@ -37,29 +42,47 @@ object RemoteConnector {
     private var documentsContainer: CosmosContainer? = null
     private var translationContainer: CosmosContainer? = null
 
-    private fun init() = CosmosClientBuilder()
-        .endpoint(props.getProperty("remoteDatabase"))
-        .credential(InteractiveBrowserCredentialBuilder().build())
-        .buildClient()
-        .getDatabase("ControlSystemData").let {
-            clientContainer = it.getContainer("Clients")
-            documentsContainer = it.getContainer("Documents")
-            translationContainer = it.getContainer("Translations")
-        }
+    private fun connect() {
+        fun loadToken() = InteractiveBrowserCredentialBuilder()
+            .tokenCachePersistenceOptions(TokenCachePersistenceOptions())
+            .authenticationRecord(AuthenticationRecord.deserialize(File(authRecordFilePath).inputStream()))
+            .build()
 
+        fun buildClient(credential: InteractiveBrowserCredential?) = CosmosClientBuilder()
+            .endpoint(props.getProperty("remoteDatabase"))
+            .credential(credential)
+            .buildClient()
+            .getDatabase("ControlSystemData")
+            .let {
+                clientContainer = it.getContainer("Clients")
+                documentsContainer = it.getContainer("Documents")
+                translationContainer = it.getContainer("Translations")
+            }
+
+
+        try {
+            buildClient(loadToken())
+        } catch (_: Exception) {
+            InteractiveBrowserCredentialBuilder()
+                .tokenCachePersistenceOptions(TokenCachePersistenceOptions())
+                .build().authenticate().block()
+                .let { it?.serialize(File(authRecordFilePath).outputStream()) }
+            buildClient(loadToken())
+        }
+    }
 
     fun queryRemoteClients(): CosmosPagedIterable<Client>? {
-        clientContainer ?: init()
+        clientContainer ?: connect()
         return clientContainer?.queryItems("select * from c", CosmosQueryRequestOptions(), Client::class.java)
     }
 
     fun queryRemoteDocuments(): CosmosPagedIterable<Document>? {
-        documentsContainer ?: init()
+        documentsContainer ?: connect()
         return documentsContainer?.queryItems("select * from c", CosmosQueryRequestOptions(), Document::class.java)
     }
 
     fun queryRemoteTranslations(): CosmosPagedIterable<Translation>? {
-        translationContainer ?: init()
+        translationContainer ?: connect()
         return translationContainer?.queryItems("select * from c", CosmosQueryRequestOptions(), Translation::class.java)
     }
 }
