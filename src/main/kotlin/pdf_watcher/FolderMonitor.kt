@@ -1,10 +1,7 @@
 package pdf_watcher
 
 import Preferences.monitoredFolder
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.nio.file.FileSystems
 import java.nio.file.StandardWatchEventKinds
 import java.nio.file.WatchKey
@@ -33,7 +30,11 @@ object FolderMonitor {
             watchKey = Path(monitoredFolder).register(watchService, StandardWatchEventKinds.ENTRY_CREATE)
             coroutine = CoroutineScope(Dispatchers.Default).launch {
                 while (watchKey != null) {
-                    processFiles(getChangedFiles())
+                    val files = getChangedFiles()
+                    CoroutineScope(Dispatchers.Default).launch {
+                        delay(1000)
+                        processFiles(files)
+                    }
                 }
             }
             true
