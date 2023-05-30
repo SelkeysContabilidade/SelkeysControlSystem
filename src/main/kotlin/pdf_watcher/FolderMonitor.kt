@@ -30,11 +30,13 @@ object FolderMonitor {
             watchKey = Path(monitoredFolder).register(watchService, StandardWatchEventKinds.ENTRY_CREATE)
             coroutine = CoroutineScope(Dispatchers.Default).launch {
                 while (watchKey != null) {
-                    val files = getChangedFiles()
+                    var files = getChangedFiles()
                     CoroutineScope(Dispatchers.Default).launch {
-                        processFiles(files)
-                        delay(3000)
-                        processFiles(files)
+                        for (i in 0..3) {
+                            files = processFiles(files)
+                            if (files.isEmpty()) break
+                            delay(3000)
+                        }
                     }
                 }
             }
