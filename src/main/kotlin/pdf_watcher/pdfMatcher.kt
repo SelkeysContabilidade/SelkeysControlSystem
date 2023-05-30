@@ -11,16 +11,6 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 
-fun match(files: List<String>, fileFunction: (String) -> String): List<Pair<String, String>> {
-    val documents = findAllDocuments()
-    return files
-        .map { file ->
-            val txtFile = fileFunction(file)
-            Pair(file, documents.firstNotNullOfOrNull { buildDocumentName(it, txtFile, file) })
-        }
-        .mapNotNull { if (it.second != null) Pair(it.first, it.second!!) else null }
-}
-
 
 fun buildDocumentName(document: LocalDatabase.Document, content: String, fileName: String): String? {
     if (document.identifier.toRegex() !in content) return null
@@ -44,30 +34,33 @@ fun buildDocumentName(document: LocalDatabase.Document, content: String, fileNam
     return "$monitoredFolder/" + folder + filename.replace("/".toRegex(), "_")
 }
 
-fun processFiles(files: List<String>) {
-    match(files.filter { it.endsWith(".pdf") }) {
+fun processFiles(files: List<String>): List<String> {
+    val documents = findAllDocuments()
+    val mutable = mutableSetOf<String>()
+    val emptySpaces = "[\r\n\t\\s  ]+".toRegex()
+
+    files.stream().parallel().forEach { filename ->
         try {
-            PDDocument.load(File(it)).use { PDFTextStripper().getText(it).replace("[\\s ]+".toRegex(), " ") }
+            val content = when (File(filename).extension) {
+                "pdf" -> PDDocument.load(File(filename)).use { PDFTextStripper().getText(it) }
+                "ofx" -> File(filename).readText()
+                else -> null
+            }?.replace(emptySpaces, " ")
+            if (content != null) {
+                val destination = documents.firstNotNullOfOrNull { buildDocumentName(it, content, filename) }
+                moveOrCopy(filename, destination)
+            }
         } catch (_: Exception) {
-            ""
+            mutable.add(filename)
         }
-    }.forEach(::moveOrCopy)
-    match(files.filter { it.endsWith(".ofx") }) {
-        File(it).readText().replace("[\r\n\t ]+".toRegex(), " ")
-    }.forEach(::moveOrCopy)
-//    match(files.filter { it.endsWith(".zip") })
-//    match(files.filter { it.endsWith(".xml") })
+    }
+    return mutable.toList()
 }
 
-fun moveOrCopy(sourceDest: Pair<String, String>) {
-    val (source, destination) = sourceDest
-    try {
-        if (moveFiles) {
-            Files.createDirectories(Paths.get(File(destination).parent))
-            File(source).renameTo(File(destination))
-        } else File(source).copyTo(File(destination))
-    } catch (_: Exception) {
-        println("move or copy failed")
-        println("moving from $source to $destination")
-    }
+fun moveOrCopy(source: String, destination: String?) {
+    if (destination == null) throw Exception()
+    if (moveFiles) {
+        Files.createDirectories(Paths.get(File(destination).parent))
+        if (!File(source).renameTo(File(destination))) throw Exception()
+    } else File(source).copyTo(File(destination))
 }
