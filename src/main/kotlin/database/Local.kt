@@ -5,6 +5,8 @@ import com.azure.cosmos.util.CosmosPagedIterable
 import database.RemoteConnector.queryRemoteClients
 import database.RemoteConnector.queryRemoteDocuments
 import database.RemoteConnector.queryRemoteTranslations
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.dao.IntEntity
@@ -22,8 +24,7 @@ object LocalDatabase {
     private val coroutineContext = newSingleThreadContext("localDatabase")
 
 
-    fun resyncDatabase() = runBlocking(coroutineContext) {
-
+    fun resyncDatabase() {
         //fetch remote clients before doing anything
         val sourceClients: CosmosPagedIterable<RemoteConnector.Client>?
         val sourceDocuments: CosmosPagedIterable<RemoteConnector.Document>?
@@ -33,66 +34,74 @@ object LocalDatabase {
             sourceDocuments = queryRemoteDocuments()
             sourceTranslations = queryRemoteTranslations()
             if ((sourceClients == null) || (sourceDocuments == null) || (sourceTranslations == null)) {
-                return@runBlocking
+                return
             }
-        } catch (_: Exception) {
-            return@runBlocking
+        } catch (e: Exception) {
+            return
         }
-        //clear all local databases
-        transaction(db) {
-            Procedures.dropStatement().forEach(::exec)
-            Registries.dropStatement().forEach(::exec)
-            Documents.dropStatement().forEach(::exec)
-            Clients.dropStatement().forEach(::exec)
-            Translations.dropStatement().forEach(::exec)
-            SchemaUtils.create(Translations)
-            SchemaUtils.create(Documents)
-            SchemaUtils.create(Clients)
-            SchemaUtils.create(Procedures)
-            SchemaUtils.create(Registries)
-        }
-        //adding source data to the local
-        sourceClients.forEach {
-            val client = transaction {
-                Client.new {
-                    baseFolderStructure = it.baseFolderStructure
-                    nickname = it.nickname
-                }
-            }
-            it.registry.forEach {
-                transaction {
-                    Registry.new {
-                        registry = it
-                        this.client = client
-                    }
-                }
-            }
-        }
-        sourceDocuments.forEach {
-            val document = transaction {
-                Document.new {
-                    identifier = it.identifier
-                    baseFolderStructure = it.baseFolderStructure
-                    registryRegex = it.registryRegex
-                }
-            }
-            it.procedures.map {
-                transaction {
-                    Procedure.new {
-                        type = it.type
-                        isFolder = it.folder
-                        content = it.content
-                        order = it.order
-                        this.document = document
-                    }
-                }
-            }
-        }
-        sourceTranslations.forEach {
+
+        runBlocking(coroutineContext) {
+            //clear all local databases
             transaction {
-                Translation.new {
-                    key = it.key
-                    value = it.value
+                Procedures.dropStatement().forEach(::exec)
+                Registries.dropStatement().forEach(::exec)
+                Documents.dropStatement().forEach(::exec)
+                Clients.dropStatement().forEach(::exec)
+                Translations.dropStatement().forEach(::exec)
+                SchemaUtils.create(Translations)
+                SchemaUtils.create(Documents)
+                SchemaUtils.create(Clients)
+                SchemaUtils.create(Procedures)
+                SchemaUtils.create(Registries)
+            }
+            //adding source data to the local
+            launch(Dispatchers.Default) {
+                transaction {
+                    sourceClients.forEach {
+                        val client =
+                            Client.new {
+                                baseFolderStructure = it.baseFolderStructure
+                                nickname = it.nickname
+                            }
+                        it.registry.forEach {
+                            Registry.new {
+                                registry = it
+                                this.client = client
+                            }
+                        }
+                    }
+                }
+            }
+
+            launch(Dispatchers.Default) {
+                transaction {
+                    sourceDocuments.forEach {
+                        val document =
+                            Document.new {
+                                identifier = it.identifier
+                                baseFolderStructure = it.baseFolderStructure
+                                registryRegex = it.registryRegex
+                            }
+                        it.procedures.forEach {
+                            Procedure.new {
+                                type = it.type
+                                isFolder = it.folder
+                                content = it.content
+                                order = it.order
+                                this.document = document
+                            }
+                        }
+                    }
+                }
+            }
+            launch(Dispatchers.Default) {
+                transaction {
+                    sourceTranslations.forEach {
+                        Translation.new {
+                            key = it.key
+                            value = it.value
+                        }
+                    }
                 }
             }
         }

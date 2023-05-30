@@ -32,6 +32,7 @@ object FolderMonitor {
                 while (watchKey != null) {
                     val files = getChangedFiles()
                     CoroutineScope(Dispatchers.Default).launch {
+                        processFiles(files)
                         delay(3000)
                         processFiles(files)
                     }
