@@ -10,6 +10,7 @@ import org.apache.pdfbox.text.PDFTextStripper
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.*
 
 
 fun buildDocumentName(document: LocalDatabase.Document, content: String, fileName: String): String? {
@@ -41,7 +42,7 @@ fun processFiles(files: List<String>): List<String> {
 
     files.stream().parallel().forEach { filename ->
         try {
-            val content = when (File(filename).extension) {
+            val content = when (File(filename).extension.lowercase(Locale.getDefault())) {
                 "pdf" -> PDDocument.load(File(filename)).use { PDFTextStripper().getText(it) }
                 "ofx" -> File(filename).readText()
                 else -> null

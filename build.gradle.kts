@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "br.com.selkeys"
-version = "1.2.2"
+version = "1.2.3"
 java.toolchain.languageVersion.set(JavaLanguageVersion.of(19))
 compose.desktop.application.mainClass = "MainKt"
 
@@ -20,8 +20,8 @@ dependencies {
     windowsAmd64(compose.desktop.windows_x64)
     linuxAmd64(compose.desktop.linux_x64)
 
-    implementation("com.azure:azure-cosmos:4.45.1")
-    implementation("com.azure:azure-identity:1.9.0")
+    implementation("com.azure:azure-cosmos:4.46.0")
+    implementation("com.azure:azure-identity:1.9.1")
 
     implementation("org.jetbrains.exposed:exposed-core:0.41.1")
     implementation("org.jetbrains.exposed:exposed-dao:0.41.1")
