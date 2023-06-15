@@ -331,13 +331,11 @@ object Gui {
             }
         }
 
-    @OptIn(ExperimentalMaterialApi::class)
     @Composable
     private fun contentModifier(): Modifier {
-        val contentOffset = remember { derivedStateOf { drawerState.offset ?: 0F } }
         return Modifier
             .wrapContentWidth(unbounded = true)
-            .offset(max(edgePadding, contentOffset.value.dp + drawerSize.value.width + edgePadding * 2))
+            .offset(edgePadding)
             .onSizeChanged { contentSize.value = DpSize(it.width.dp, it.height.dp + topBarHeight + menuBarHeight) }
             .padding(end = edgePadding * 2)
     }
