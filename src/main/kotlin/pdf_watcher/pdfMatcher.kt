@@ -18,9 +18,7 @@ import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 import kotlin.io.path.createTempFile
 
-
 val emptySpaces = "[\r\n\t\\s  ]+".toRegex()
-
 
 fun buildDocumentName(document: LocalDatabase.Document, content: String, fileName: String): String? {
     if (document.secondaryStorage && !useSecondaryStorage) return null

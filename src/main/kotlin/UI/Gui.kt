@@ -361,7 +361,6 @@ object Gui {
             }
         }
 
-    @OptIn(ExperimentalMaterialApi::class)
     @Composable
     private fun contentModifier(): Modifier {
         return Modifier

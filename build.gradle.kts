@@ -21,6 +21,7 @@ dependencies {
     linuxAmd64(compose.desktop.linux_x64)
 
     implementation("com.azure:azure-cosmos:4.47.0")
+
     implementation("com.azure:azure-identity:1.9.1")
 
     implementation("org.jetbrains.exposed:exposed-core:0.41.1")
