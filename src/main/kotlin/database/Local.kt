@@ -81,6 +81,7 @@ object LocalDatabase {
                                 identifier = it.identifier
                                 baseFolderStructure = it.baseFolderStructure
                                 registryRegex = it.registryRegex
+                                secondaryStorage = it.secondaryStorage
                             }
                         it.procedures.forEach {
                             Procedure.new {
@@ -173,6 +174,7 @@ object LocalDatabase {
         var identifier by Documents.identifier
         var baseFolderStructure by Documents.baseFolderStructure
         var registryRegex by Documents.registryRegex
+        var secondaryStorage by Documents.secondaryStorage
         private val procedures by Procedure referrersOn Procedures.document
         fun getProceduresOrdered() = transaction { procedures.sortedBy { it.order } }
     }
@@ -181,6 +183,7 @@ object LocalDatabase {
         val identifier = text("identifier")
         val baseFolderStructure = text("baseFolderStructure", eagerLoading = true)
         val registryRegex = text("registryIndex")
+        val secondaryStorage = bool("secondaryStorage")
     }
 
     class Client(id: EntityID<Int>) : IntEntity(id) {
