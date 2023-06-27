@@ -24,6 +24,7 @@ object RemoteConnector {
         lateinit var baseFolderStructure: String
         lateinit var procedures: List<Procedure>
         lateinit var registryRegex: String
+        var secondaryStorage = false
     }
 
     class Procedure {

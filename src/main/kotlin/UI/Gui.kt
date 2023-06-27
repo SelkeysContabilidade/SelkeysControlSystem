@@ -4,8 +4,12 @@ import Preferences
 import Preferences.disableFirstExecutionWarning
 import Preferences.firstExecution
 import Preferences.moveFiles
+import Preferences.moveUnknownClients
 import Preferences.props
 import Preferences.toggleMoveFiles
+import Preferences.toggleMoveUnknownClients
+import Preferences.toggleSecondaryStorage
+import Preferences.useSecondaryStorage
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -79,7 +83,6 @@ object Gui {
     private lateinit var currentScreen: MutableState<CurrentScreen>
     private lateinit var drawerSize: MutableState<DpSize>
     private lateinit var drawerState: DrawerState
-    private lateinit var drawerOffset: MutableState<Float>
     private lateinit var contentSize: MutableState<DpSize>
     private lateinit var monitoredFolder: MutableState<String>
 
@@ -89,7 +92,6 @@ object Gui {
     @Preview
     fun FrameWindowScope.app(appScope: ApplicationScope, state: WindowState) {
         drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-        drawerOffset = remember { mutableStateOf(drawerState.offset ?: 0F) }
         scaffoldState = rememberScaffoldState(drawerState = drawerState)
         coroutineScope = rememberCoroutineScope()
         windowState = state
@@ -102,7 +104,7 @@ object Gui {
         monitoredFolder = remember { mutableStateOf(Preferences.monitoredFolder) }
 
         //not accessing the window state here breaks the first composition because it doesn't get properly updated
-        //seems to be a bug in compose 1.4.0
+        //seems to be a bug in compose 1.4.0+
         windowState.size
 
         Scaffold(
@@ -217,6 +219,20 @@ object Gui {
                         }
                     }
                 }
+                var moveUnknownClients by remember { mutableStateOf(moveUnknownClients) }
+                Button(onClick = { moveUnknownClients = toggleMoveUnknownClients() }) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (moveUnknownClients) {
+                            Icon(painterResource("Icons/Person.svg"), "Move Files")
+                            Spacer(Modifier.width(5.dp))
+                            Text("Mover clientes desconhecidos")
+                        } else {
+                            Icon(painterResource("Icons/Person_Disabled.svg"), "Dont Move Files")
+                            Spacer(Modifier.width(5.dp))
+                            Text("Não mover clientes desconhecidos")
+                        }
+                    }
+                }
             }
             Spacer(Modifier.width(5.dp))
             Column {
@@ -231,6 +247,20 @@ object Gui {
                     Icon(painterResource("Icons/Info.svg"), null)
                     Spacer(Modifier.width(5.dp))
                     Text("Sobre")
+                }
+                var secondaryStorage by remember { mutableStateOf(useSecondaryStorage) }
+                Button(onClick = { secondaryStorage = toggleSecondaryStorage() }) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (secondaryStorage) {
+                            Icon(painterResource("Icons/Cloud_Upload.svg"), "Move Files")
+                            Spacer(Modifier.width(5.dp))
+                            Text("Armazenamento Secundario")
+                        } else {
+                            Icon(painterResource("Icons/Cloud_Off.svg"), "Dont Move Files")
+                            Spacer(Modifier.width(5.dp))
+                            Text("Somente Primario")
+                        }
+                    }
                 }
             }
         }

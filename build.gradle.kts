@@ -1,11 +1,11 @@
 plugins {
     kotlin("jvm") version "1.8.20"
-    id("org.jetbrains.compose") version "1.4.0"
-    id("dev.hydraulic.conveyor") version "1.4"
+    id("org.jetbrains.compose") version "1.4.1"
+    id("dev.hydraulic.conveyor") version "1.6"
 }
 
 group = "br.com.selkeys"
-version = "1.2.3"
+version = "1.3.0"
 java.toolchain.languageVersion.set(JavaLanguageVersion.of(19))
 compose.desktop.application.mainClass = "MainKt"
 
@@ -20,7 +20,8 @@ dependencies {
     windowsAmd64(compose.desktop.windows_x64)
     linuxAmd64(compose.desktop.linux_x64)
 
-    implementation("com.azure:azure-cosmos:4.46.0")
+    implementation("com.azure:azure-cosmos:4.47.0")
+
     implementation("com.azure:azure-identity:1.9.1")
 
     implementation("org.jetbrains.exposed:exposed-core:0.41.1")
@@ -30,7 +31,6 @@ dependencies {
     implementation("com.h2database:h2:2.1.214")
 
     implementation("org.apache.pdfbox:pdfbox:2.0.28")
-
 }
 
 tasks.processResources {

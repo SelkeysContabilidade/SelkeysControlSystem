@@ -9,6 +9,8 @@ object Preferences {
     var monitoredFolder: String
     var firstExecution: Boolean
     var moveFiles: Boolean
+    var moveUnknownClients: Boolean
+    var useSecondaryStorage: Boolean
     var authRecordFilePath: String
 
     private val prefs: Preferences = Preferences.userNodeForPackage(Preferences::class.java)
@@ -20,6 +22,8 @@ object Preferences {
         authRecordFilePath =
             props.getProperty("authRecordFilePath", "${System.getProperty("user.home")}/.selkeys/tokenCache")
         moveFiles = prefs.get("moveFiles", "false").toBoolean()
+        moveUnknownClients = prefs.get("moveUnknownClients", "false").toBoolean()
+        useSecondaryStorage = prefs.get("useSecondaryStorage", "false").toBoolean()
         firstExecution = prefs.get("firstExecution", "true").toBoolean()
         Thread
             .currentThread()
@@ -50,6 +54,18 @@ object Preferences {
         moveFiles = !moveFiles
         prefs.put("moveFiles", moveFiles.toString())
         return moveFiles
+    }
+
+    fun toggleSecondaryStorage(): Boolean {
+        useSecondaryStorage = !useSecondaryStorage
+        prefs.put("secondaryStorage", useSecondaryStorage.toString())
+        return useSecondaryStorage
+    }
+
+    fun toggleMoveUnknownClients(): Boolean {
+        moveUnknownClients = !moveUnknownClients
+        prefs.put("moveUnknownClients", moveUnknownClients.toString())
+        return moveUnknownClients
     }
 
 }
