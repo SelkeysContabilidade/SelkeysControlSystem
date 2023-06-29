@@ -169,7 +169,7 @@ fun unzipFolder(filePath: String) {
     ZipFile(filePath).use { zip ->
         zip.entries().asSequence().forEach { entry ->
             zip.getInputStream(entry).use { input ->
-                val newFile = "${monitoredFolder}${entry.name.replaceBeforeLast("/", "")}"
+                val newFile = entry.name.replaceBeforeLast("/", monitoredFolder)
                 files.add(newFile)
                 File(newFile).outputStream().use { output ->
                     input.copyTo(output)
