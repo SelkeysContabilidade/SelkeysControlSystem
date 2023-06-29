@@ -7,6 +7,7 @@ import Preferences.useSecondaryStorage
 import database.LocalDatabase
 import database.LocalDatabase.findAllDocuments
 import database.LocalDatabase.findTranslation
+import org.apache.pdfbox.multipdf.Splitter
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.text.PDFTextStripper
 import java.io.File
@@ -61,7 +62,7 @@ fun processFiles(files: List<String>, split: Boolean = true): List<String> {
     files.stream().parallel().forEach { filename ->
         try {
             when (File(filename).extension.lowercase(Locale.getDefault())) {
-                "pdf" -> processPDF(filename, documents)
+                "pdf" -> processPDF(filename, documents, split)
                 "ofx" -> processOFX(filename, documents)
                 "xml" -> processXML(filename, documents, split)
                 "zip" -> unzipFolder(filename)
@@ -79,12 +80,38 @@ fun processOFX(filename: String, documents: List<LocalDatabase.Document>) {
     moveOrCopy(filename, destination)
 }
 
-fun processPDF(filename: String, documents: List<LocalDatabase.Document>) {
-    val element = PDDocument.load(File(filename))
+fun processPDF(filename: String, documents: List<LocalDatabase.Document>, toSplit: Boolean) {
+    val content = PDDocument.load(File(filename))
         .use { PDFTextStripper().getText(it) }
         .replace(emptySpaces, " ")
-    val destination = documents.mapNotNull { buildDocumentName(it, element, filename) }
-    moveOrCopy(filename, destination)
+    var splits = false
+
+    val destination = documents.mapNotNull { document ->
+        if (document.identifier.toRegex() !in content) {
+            return@mapNotNull null
+        }
+        val firstProcedure = document.getProceduresOrdered()[0]
+        val splitCount = firstProcedure.content.toIntOrNull() ?: 1
+        if (firstProcedure.type == "split" && toSplit) {
+            PDDocument.load(File(filename)).use { doc ->
+                val splitter = Splitter()
+                    .apply { this.setSplitAtPage(splitCount) }
+                    .split(doc)
+                if (splitter.count() > splitCount) {
+                    val files = splitter.mapIndexed { index, pdDocument ->
+                        "${filename.removeSuffix(".pdf")} ${index.toString().padStart(3, '0')}.pdf"
+                            .also { pdDocument.save(it) }
+                    }
+                    processFiles(files, false)
+                    splits = true
+                    return@mapNotNull null
+                }
+            }
+        }
+        buildDocumentName(document, content, filename)
+    }
+    if (moveFiles && splits) File(filename).delete()
+    else moveOrCopy(filename, destination)
 }
 
 fun processXML(filename: String, documents: List<LocalDatabase.Document>, toSplit: Boolean) {
@@ -95,9 +122,10 @@ fun processXML(filename: String, documents: List<LocalDatabase.Document>, toSpli
         if (document.identifier.toRegex() !in content) {
             return@mapNotNull null
         }
-        if (document.getProceduresOrdered()[0].type == "split" && toSplit) {
+        val firstProcedure = document.getProceduresOrdered()[0]
+        if (firstProcedure.type == "split" && toSplit) {
             splits = true
-            processFiles(splitXml(filename, document.getProceduresOrdered()[0]), false)
+            processFiles(splitXml(filename, firstProcedure), false)
             return@mapNotNull null
         }
         buildDocumentName(document, content, filename)
