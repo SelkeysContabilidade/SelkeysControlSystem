@@ -12,15 +12,12 @@ import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.text.PDFTextStripper
 import java.io.File
 import java.io.FileWriter
-import java.nio.file.FileSystems
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.util.*
+import java.util.zip.ZipFile
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
-import kotlin.io.path.Path
 import kotlin.io.path.createTempFile
 
 val emptySpaces = "[\r\n\t\\s  ]+".toRegex()
@@ -168,17 +165,19 @@ fun splitXml(filename: String, procedure: LocalDatabase.Procedure): List<String>
 }
 
 fun unzipFolder(filePath: String) {
-    val files = FileSystems
-        .newFileSystem(Paths.get(filePath), emptyMap<String, Any>())
-        .use { fs ->
-            fs.rootDirectories
-                .flatMap { root ->
-                    Files.walk(root).toList()
-                        .filter(Files::isRegularFile)
-                        .map { Files.copy(it, Path("$monitoredFolder/${it.fileName}")).toString() }
+    val files = mutableListOf<String>()
+    ZipFile(filePath).use { zip ->
+        zip.entries().asSequence().forEach { entry ->
+            zip.getInputStream(entry).use { input ->
+                val newFile = "${monitoredFolder}${entry.name.replaceBeforeLast("/", "")}"
+                files.add(newFile)
+                File(newFile).outputStream().use { output ->
+                    input.copyTo(output)
                 }
+            }
         }
-    processFiles(files)
+    }
+    processFiles(files.toList())
     if (moveFiles) File(filePath).delete()
 }
 
