@@ -23,7 +23,7 @@ object Preferences {
             props.getProperty("authRecordFilePath", "${System.getProperty("user.home")}/.selkeys/tokenCache")
         moveFiles = prefs.get("moveFiles", "false").toBoolean()
         moveUnknownClients = prefs.get("moveUnknownClients", "false").toBoolean()
-        useSecondaryStorage = prefs.get("useSecondaryStorage", "false").toBoolean()
+        useSecondaryStorage = prefs.get("useSecondaryStorage", "true").toBoolean()
         firstExecution = prefs.get("firstExecution", "true").toBoolean()
         Thread
             .currentThread()
