@@ -140,16 +140,17 @@ fun splitXml(filename: String, procedure: LocalDatabase.Procedure): List<String>
 }
 
 fun unzipFolder(filePath: String) {
-    FileSystems
+    val files = FileSystems
         .newFileSystem(Paths.get(filePath), emptyMap<String, Any>())
         .use { fs ->
             fs.rootDirectories
-                .map { root ->
+                .flatMap { root ->
                     Files.walk(root).toList()
                         .filter(Files::isRegularFile)
-                        .map { Files.copy(it, Path("$monitoredFolder/${it.fileName}")) }
+                        .map { Files.copy(it, Path("$monitoredFolder/${it.fileName}")).toString() }
                 }
         }
+    processFiles(files)
     if (moveFiles) File(filePath).delete()
 }
 
