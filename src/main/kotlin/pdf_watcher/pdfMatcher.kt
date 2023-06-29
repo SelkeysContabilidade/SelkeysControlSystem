@@ -11,11 +11,15 @@ import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.text.PDFTextStripper
 import java.io.File
 import java.io.FileWriter
+import java.nio.file.FileSystems
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.*
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
+import kotlin.io.path.Path
 import kotlin.io.path.createTempFile
 
 val emptySpaces = "[\r\n\t\\s  ]+".toRegex()
@@ -60,6 +64,7 @@ fun processFiles(files: List<String>, split: Boolean = true): List<String> {
                 "pdf" -> processPDF(filename, documents)
                 "ofx" -> processOFX(filename, documents)
                 "xml" -> processXML(filename, documents, split)
+                "zip" -> unzipFolder(filename)
             }
         } catch (_: Exception) {
             mutable.add(filename)
@@ -132,6 +137,21 @@ fun splitXml(filename: String, procedure: LocalDatabase.Procedure): List<String>
         fileList.add(file.absolutePath)
     }
     return fileList
+}
+
+fun unzipFolder(filePath: String) {
+    val files = FileSystems
+        .newFileSystem(Paths.get(filePath), emptyMap<String, Any>())
+        .use { fs ->
+            fs.rootDirectories
+                .flatMap { root ->
+                    Files.walk(root).toList()
+                        .filter(Files::isRegularFile)
+                        .map { Files.copy(it, Path("$monitoredFolder/${it.fileName}")).toString() }
+                }
+        }
+    processFiles(files)
+    if (moveFiles) File(filePath).delete()
 }
 
 fun moveOrCopy(source: String, destination: List<String>) {
